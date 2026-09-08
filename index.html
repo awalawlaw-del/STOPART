@@ -814,6 +814,7 @@
             return String(bin || '-').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
         }
 
+        // PERUBAHAN UTAMA: Kombinasi Part Number + Bin agar lokasi beda tidak saling menimpa/menjumlahkan
         function buildStokKey(pn, bin) {
             return normPN(pn) + '||' + normBin(bin);
         }
@@ -1572,9 +1573,6 @@
             XLSX.writeFile(wb, `Laporan_Kontrol_Selisih_${currentWarehouse}.xlsx`);
         }
 
-        // ============================================================
-        // MODIFIED: DETAIL PART NUMBER KHUSUS BERDASARKAN GUDANG AKTIF
-        // ============================================================
         function showPartDetailModal(partNumber, binLocation, event) {
             if (event) event.stopPropagation();
 
@@ -1591,7 +1589,7 @@
             let keluarHtml = "";
             let gantungHtml = "";
 
-            // AMBIL DATA HANYA DARI GUDANG YANG SEDANG AKTIF (currentWarehouse) SAJA
+            // PERBAIKAN: Mengambil data persis dari gudang aktif (currentWarehouse)
             let sList = getWhData(sistemData, currentWarehouse);
             let mList = getWhData(masterData, currentWarehouse);
             let inList = getWhData(masukData, currentWarehouse);
@@ -1658,7 +1656,7 @@
 
             let filteredGantungModal = gList.filter(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
             if (filteredGantungModal.length === 0) {
-                gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
+                gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini.</td></tr>`;
             } else {
                 filteredGantungModal.forEach(g => {
                     gantungHtml += `<tr>
@@ -1673,7 +1671,7 @@
 
             let filteredMasuk = inList.filter(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin));
             if (filteredMasuk.length === 0) {
-                masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
+                masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini.</td></tr>`;
             } else {
                 filteredMasuk.forEach(m => {
                     let tgl = parseExcelDate(m.Tanggal);
@@ -1689,7 +1687,7 @@
 
             let filteredKeluar = outList.filter(k => normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin));
             if (filteredKeluar.length === 0) {
-                keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
+                keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini.</td></tr>`;
             } else {
                 filteredKeluar.forEach(k => {
                     let tgl = parseExcelDate(k.Tanggal);
@@ -2099,33 +2097,14 @@
         }
 
         function switchTab(tabId, event) {
-            if (event) event.preventDefault();
+            if(event) event.preventDefault();
             document.querySelectorAll('.tab-content-section').forEach(el => el.style.display = 'none');
+            document.getElementById(`tab-${tabId}`).style.display = 'block';
             document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
-
-            let targetSection = document.getElementById(`tab-${tabId}`);
-            if (targetSection) targetSection.style.display = 'block';
-
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            }
-
-            let titles = {
-                'rekapan': 'Rekapan Dashboard Gudang',
-                'stok-sistem': 'Data Master Stok Sistem',
-                'stok-fisik': 'Data Stok Fisik / Opname (STO)',
-                'stok-masuk': 'Riwayat Stok Masuk Harian',
-                'stok-keluar': 'Riwayat Stok Keluar Harian',
-                'delivery-gantung': 'Daftar Delivery Gantung',
-                'selisih': 'Laporan Kontrol Selisih Stok',
-                'hapus-data': 'Kelola & Hapus Data Sistem'
-            };
-            document.getElementById('page-title').innerText = titles[tabId] || 'Dashboard Gudang';
+            if(event && event.currentTarget) event.currentTarget.classList.add('active');
         }
 
-        window.onload = function() {
-            renderAll();
-        };
+        renderAll();
     </script>
 </body>
 </html>
