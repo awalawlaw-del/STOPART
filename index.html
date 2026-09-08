@@ -642,14 +642,13 @@
                 </div>
                 <div class="modal-body p-4 bg-light">
                     <div class="mb-3">
-                        <h6 class="fw-bold text-dark mb-1">Nama Barang: <span id="modal-nama-barang" class="fw-normal text-secondary"></span> | Gudang Acuan: <span id="modal-wh-title" class="fw-bold text-primary"></span></h6>
+                        <h6 class="fw-bold text-dark mb-1">Nama Barang: <span id="modal-nama-barang" class="fw-normal text-secondary"></span> | Gudang: <span id="modal-wh-title" class="fw-bold text-primary"></span></h6>
                     </div>
 
-                    <!-- TABEL STATUS LOKASI (SEMUA GUDANG) -->
+                    <!-- TABEL STATUS LOKASI -->
                     <div class="card mb-4 shadow-sm">
-                        <div class="card-header bg-white fw-bold text-primary py-3 d-flex justify-content-between align-items-center">
-                            <span><i class="fa-solid fa-warehouse me-2"></i>Status & Stok di Seluruh Gudang & Lokasi (H50, H5A, H5B)</span>
-                            <span class="badge bg-secondary" style="font-size: 0.75rem;">Multi-Location View</span>
+                        <div class="card-header bg-white fw-bold text-primary py-3">
+                            <i class="fa-solid fa-warehouse me-2"></i>Status & Stok Terbaru
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -815,7 +814,6 @@
             return String(bin || '-').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
         }
 
-        // PERUBAHAN UTAMA: Kombinasi Part Number + Bin agar lokasi beda tidak saling menimpa/menjumlahkan
         function buildStokKey(pn, bin) {
             return normPN(pn) + '||' + normBin(bin);
         }
@@ -1024,16 +1022,16 @@
             myModal.show();
         }
 
-        function editFisikFromModalDetail(whTarget, pn, bin) {
+        function editFisikFromModalDetail(pn, bin) {
             let today = new Date().toISOString().split('T')[0];
-            let mList = getWhData(masterData, whTarget);
-            let sList = getWhData(sistemData, whTarget);
+            let mList = getWhData(masterData);
+            let sList = getWhData(sistemData);
             
             let foundMaster = mList.find(m => normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
             let foundSistem = sList.find(s => normPN(s['Part Number']) === normPN(pn) && normBin(s['Bin']) === normBin(bin));
 
             document.getElementById('input-fisik-tgl').value = foundMaster ? (foundMaster['Tanggal STO'] || today) : today;
-            document.getElementById('input-fisik-lokasi').value = whTarget;
+            document.getElementById('input-fisik-lokasi').value = currentWarehouse;
             document.getElementById('input-fisik-bin').value = bin;
             document.getElementById('input-fisik-bin').readOnly = true;
             document.getElementById('input-fisik-pn').value = pn;
@@ -1052,7 +1050,6 @@
         function saveStokFisikManual(event) {
             event.preventDefault();
             let tgl = document.getElementById('input-fisik-tgl').value;
-            let whTarget = document.getElementById('input-fisik-lokasi').value || currentWarehouse;
             let bin = document.getElementById('input-fisik-bin').value.trim() || '-';
             let pn = document.getElementById('input-fisik-pn').value.trim();
             let nama = document.getElementById('input-fisik-nama').value.trim();
@@ -1063,7 +1060,7 @@
                 return;
             }
 
-            let mList = getWhData(masterData, whTarget);
+            let mList = getWhData(masterData);
             let existingIndex = mList.findIndex(m => m['Tanggal STO'] === tgl && normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
             
             if (existingIndex >= 0) {
@@ -1086,7 +1083,7 @@
                 }
             }
 
-            checkAndAutoRegisterSistem(pn, nama, bin, whTarget);
+            checkAndAutoRegisterSistem(pn, nama, bin);
             saveDataToStorage();
             renderAll();
 
@@ -1094,7 +1091,7 @@
             let modalObj = bootstrap.Modal.getInstance(modalEl);
             modalObj.hide();
 
-            alert("Data stok fisik berhasil disimpan ke gudang " + whTarget + "!");
+            alert("Data stok fisik berhasil disimpan ke gudang " + currentWarehouse + "!");
         }
 
         function hapusStokFisikRow(index) {
@@ -1576,7 +1573,7 @@
         }
 
         // ============================================================
-        // MODIFIED: MENAMPILKAN SEMUA LOKASI DI SEMUA GUDANG (H50, H5A, H5B)
+        // MODIFIED: DETAIL PART NUMBER KHUSUS BERDASARKAN GUDANG AKTIF
         // ============================================================
         function showPartDetailModal(partNumber, binLocation, event) {
             if (event) event.stopPropagation();
@@ -1591,120 +1588,82 @@
             let foundNama = "-";
             let lokasiHtml = "";
             let masukHtml = "";
-            let kelarHtml = "";
+            let keluarHtml = "";
             let gantungHtml = "";
 
-            // List gudang yang dimonitor
-            const allWarehouses = ['H50', 'H5A', 'H5B'];
-            let matchedLocationsCount = 0;
+            // AMBIL DATA HANYA DARI GUDANG YANG SEDANG AKTIF (currentWarehouse) SAJA
+            let sList = getWhData(sistemData, currentWarehouse);
+            let mList = getWhData(masterData, currentWarehouse);
+            let inList = getWhData(masukData, currentWarehouse);
+            let outList = getWhData(keluarData, currentWarehouse);
+            let gList = getWhData(deliveryGantungData, currentWarehouse);
 
-            // Cari nama barang global lintas gudang
-            for (let wh of allWarehouses) {
-                let sListWh = sistemData[wh] || [];
-                let mListWh = masterData[wh] || [];
-                let matchSys = sListWh.find(s => normPN(s['Part Number']) === normPN(cleanPn));
-                if (matchSys && matchSys['Nama Barang']) {
-                    foundNama = matchSys['Nama Barang'];
-                    break;
-                }
-                let matchFisik = mListWh.find(f => normPN(f['Part Number']) === normPN(cleanPn));
-                if (matchFisik && matchFisik['Nama Barang']) {
-                    foundNama = matchFisik['Nama Barang'];
-                    break;
-                }
+            let matchSys = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
+            if (matchSys) foundNama = matchSys['Nama Barang'];
+            else {
+                let matchFisik = mList.find(f => normPN(f['Part Number']) === normPN(cleanPn) && normBin(f['Bin']) === normBin(cleanBin));
+                if (matchFisik) foundNama = matchFisik['Nama Barang'];
             }
             document.getElementById('modal-nama-barang').innerText = foundNama;
 
-            // Iterasi semua gudang untuk menampilkan setiap lokasi (bin) yang memiliki Part Number ini
-            allWarehouses.forEach(wh => {
-                let sListWh = sistemData[wh] || [];
-                let mListWh = masterData[wh] || [];
-                let inListWh = masukData[wh] || [];
-                let outListWh = keluarData[wh] || [];
-                let gListWh = deliveryGantungData[wh] || [];
+            let sysAwal = 0;
+            let foundS = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
+            if (foundS) sysAwal = parseInt(foundS['Stok Sistem Awal']) || 0;
 
-                // Kumpulkan semua bin unik untuk part number ini di gudang 'wh'
-                let binsInThisWh = new Set();
-                sListWh.forEach(s => { if (normPN(s['Part Number']) === normPN(cleanPn)) binsInThisWh.add(normBin(s['Bin'])); });
-                mListWh.forEach(m => { if (normPN(m['Part Number']) === normPN(cleanPn)) binsInThisWh.add(normBin(m['Bin'])); });
-                inListWh.forEach(i => { if (normPN(i['Part Number']) === normPN(cleanPn)) binsInThisWh.add(normBin(i['Bin'])); });
+            let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
+            let key = buildStokKey(cleanPn, cleanBin);
+            let fisikVal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
+            let tglFisik = mapTanggalFisik[key] || '-';
 
-                binsInThisWh.forEach(binKeyOriginal => {
-                    matchedLocationsCount++;
-                    let binDisplay = sListWh.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyOriginal)?.['Bin'] || 
-                                     mListWh.find(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyOriginal)?.['Bin'] || binKeyOriginal;
+            let hasGantung = gList.some(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
 
-                    let foundS = sListWh.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyOriginal);
-                    let sysAwal = foundS ? (parseInt(foundS['Stok Sistem Awal']) || 0) : 0;
-
-                    // Hitung fisik terbaru untuk bin & gudang ini
-                    let sortedMasterWh = [...mListWh].sort((a, b) => (a['Tanggal STO'] || '').localeCompare(b['Tanggal STO'] || ''));
-                    let fisikVal = null;
-                    let tglFisik = '-';
-                    sortedMasterWh.forEach(f => {
-                        if (normPN(f['Part Number']) === normPN(cleanPn) && normBin(f['Bin']) === binKeyOriginal) {
-                            fisikVal = parseInt(f['Stok Fisik Awal']) || 0;
-                            tglFisik = f['Tanggal STO'] || '-';
-                        }
-                    });
-
-                    let hasGantung = gListWh.some(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === binKeyOriginal);
-
-                    let tMasuk = 0;
-                    inListWh.forEach(m => {
-                        if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyOriginal) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
-                    });
-
-                    let tKeluar = 0;
-                    outListWh.forEach(k => {
-                        if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyOriginal) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
-                    });
-
-                    let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
-                    let sysAkhir = hitung.stokSistemAkhir;
-
-                    let statusBadge = "";
-                    let fisikDisplay = "";
-
-                    if (fisikVal === null) {
-                        statusBadge = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum Di-STO</span>`;
-                        fisikDisplay = `<span class="text-muted fst-italic">Belum Opname</span>`;
-                    } else {
-                        let selisih = hitung.selisih;
-                        fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
-                        if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
-                        else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
-                        else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
-                    }
-
-                    lokasiHtml += `<tr>
-                        <td class="ps-3 fw-bold">${wh}</td>
-                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${binDisplay}</span></td>
-                        <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
-                        <td>${fisikDisplay}</td>
-                        <td>${statusBadge}</td>
-                        <td class="pe-3 text-center">
-                            <button class="btn btn-sm btn-primary py-0 px-2 fw-bold" onclick="editFisikFromModalDetail('${wh}', '${safePN(cleanPn)}', '${safeBin(binDisplay)}')"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Fisik</button>
-                        </td>
-                    </tr>`;
-                });
+            let tMasuk = 0;
+            inList.forEach(m => {
+                if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin)) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
             });
 
-            if (matchedLocationsCount === 0) {
-                lokasiHtml = `<tr><td colspan="6" class="text-center text-muted py-3">Tidak ditemukan data lokasi untuk part number ini.</td></tr>`;
+            let tKeluar = 0;
+            outList.forEach(k => {
+                if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin)) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
+            });
+
+            let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
+            let sysAkhir = hitung.stokSistemAkhir;
+
+            let statusBadge = "";
+            let fisikDisplay = "";
+
+            if (fisikVal === null) {
+                statusBadge = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum Di-STO</span>`;
+                fisikDisplay = `<span class="text-muted fst-italic">Belum Opname</span>`;
+            } else {
+                let selisih = hitung.selisih;
+                fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
+                if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
+                else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
+                else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
             }
+
+            lokasiHtml = `<tr>
+                <td class="ps-3 fw-bold">${currentWarehouse}</td>
+                <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
+                <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
+                <td>${fisikDisplay}</td>
+                <td>${statusBadge}</td>
+                <td class="pe-3 text-center">
+                    <button class="btn btn-sm btn-primary py-0 px-2 fw-bold" onclick="editFisikFromModalDetail('${safePN(cleanPn)}', '${safeBin(cleanBin)}')"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Fisik</button>
+                </td>
+            </tr>`;
             document.getElementById('modal-table-lokasi').innerHTML = lokasiHtml;
 
-            // Delivery gantung untuk part ini (pada gudang aktif atau seluruh gudang)
-            let gListAktif = getWhData(deliveryGantungData);
-            let filteredGantungModal = gListAktif.filter(g => normPN(g['Part Number']) === normPN(cleanPn));
+            let filteredGantungModal = gList.filter(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
             if (filteredGantungModal.length === 0) {
-                gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung untuk part ini.</td></tr>`;
+                gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
             } else {
                 filteredGantungModal.forEach(g => {
                     gantungHtml += `<tr>
                         <td class="ps-3"><code class="text-primary">${g['No. Delivery']}</code></td>
-                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${g['Bin'] || '-'}</span></td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
                         <td>${g['Material Deskripsi']}</td>
                         <td class="pe-3"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
                     </tr>`;
@@ -1712,17 +1671,15 @@
             }
             document.getElementById('modal-table-gantung').innerHTML = gantungHtml;
 
-            // Riwayat Masuk untuk part ini
-            let inListAktif = getWhData(masukData);
-            let filteredMasuk = inListAktif.filter(m => normPN(m['Part Number']) === normPN(cleanPn));
+            let filteredMasuk = inList.filter(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin));
             if (filteredMasuk.length === 0) {
-                masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk untuk part ini.</td></tr>`;
+                masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
             } else {
                 filteredMasuk.forEach(m => {
                     let tgl = parseExcelDate(m.Tanggal);
                     masukHtml += `<tr>
                         <td class="ps-3">${tgl || '-'}</td>
-                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${m['Bin'] || '-'}</span></td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
                         <td><span class="badge bg-secondary bg-opacity-10 text-dark">${m['Nama User'] || m['User Wadig']}</span></td>
                         <td class="pe-3 text-success fw-bold">+${m['Jumlah Masuk']}</td>
                     </tr>`;
@@ -1730,24 +1687,22 @@
             }
             document.getElementById('modal-table-masuk').innerHTML = masukHtml;
 
-            // Riwayat Keluar untuk part ini
-            let outListAktif = getWhData(keluarData);
-            let filteredKeluar = outListAktif.filter(k => normPN(k['Part Number']) === normPN(cleanPn));
+            let filteredKeluar = outList.filter(k => normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin));
             if (filteredKeluar.length === 0) {
-                kelarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar untuk part ini.</td></tr>`;
+                keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini pada gudang ${currentWarehouse}.</td></tr>`;
             } else {
                 filteredKeluar.forEach(k => {
                     let tgl = parseExcelDate(k.Tanggal);
-                    kelarHtml += `<tr>
+                    keluarHtml += `<tr>
                         <td class="ps-3">${tgl || '-'}</td>
                         <td><code class="text-primary">${k['No. Delivery'] || '-'}</code></td>
-                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${k['Bin'] || '-'}</span></td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
                         <td><span class="badge bg-secondary bg-opacity-10 text-dark">${k['Nama User'] || k['User Wadig']}</span></td>
                         <td class="pe-3 text-danger fw-bold">-${k['Jumlah Keluar']}</td>
                     </tr>`;
                 });
             }
-            document.getElementById('modal-table-keluar').innerHTML = kelarHtml;
+            document.getElementById('modal-table-keluar').innerHTML = keluarHtml;
 
             let myModal = new bootstrap.Modal(document.getElementById('detailPartModal'));
             myModal.show();
