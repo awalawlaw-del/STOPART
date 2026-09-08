@@ -1,0 +1,2128 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GudangPro - Warehouse Monitoring Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS (XLSX Library) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --sidebar-bg: #1e1b4b;
+            --sidebar-hover: #312e81;
+            --bg-body: #f1f5f9;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: #1e293b;
+        }
+        /* Sidebar Styling */
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .sidebar h4 {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #818cf8;
+        }
+        .sidebar .nav-link {
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: var(--sidebar-hover);
+            color: #fff;
+            transform: translateX(4px);
+        }
+        /* Warehouse Badge Selector */
+        .warehouse-badge {
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .warehouse-badge.active-wh {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            background-color: #4338ca !important;
+        }
+        /* Cards Styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+        }
+        .card-stat {
+            border-left: 5px solid var(--primary-color);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .card-stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .card-stat.active-filter {
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background: #eef2ff;
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        /* Tables Styling */
+        .table-custom th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .table-custom td {
+            vertical-align: middle;
+            color: #334155;
+            font-size: 0.875rem;
+        }
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .clickable-row:hover {
+            background-color: #f1f5f9 !important;
+        }
+        .part-number-link {
+            cursor: pointer;
+            text-decoration: underline;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .part-number-link:hover {
+            color: #312e81;
+        }
+        /* Header & Buttons */
+        .main-header {
+            background: #ffffff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border: none;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: opacity 0.2s;
+        }
+        .btn-primary-custom:hover {
+            opacity: 0.9;
+            background-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar / Menu -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3">
+                <div class="text-center py-3">
+                    <h4><i class="fa-solid fa-cubes me-2"></i>GudangPro</h4>
+                    <span class="badge text-light mt-1" style="background-color: #312e81; font-size: 0.7rem;">Sistem Monitoring Stok</span>
+                </div>
+                
+                <!-- PILIHAN GUDANG UTAMA (H50, H5A, H5B) -->
+                <div class="mb-3 px-1">
+                    <label class="form-label text-white-50 small fw-bold mb-1">PILIH GUDANG AKTIF:</label>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-dark flex-fill warehouse-badge active-wh" id="wh-btn-H50" onclick="switchWarehouse('H50')">H50</button>
+                        <button class="btn btn-sm btn-dark flex-fill warehouse-badge" id="wh-btn-H5A" onclick="switchWarehouse('H5A')">H5A</button>
+                        <button class="btn btn-sm btn-dark flex-fill warehouse-badge" id="wh-btn-H5B" onclick="switchWarehouse('H5B')">H5B</button>
+                    </div>
+                </div>
+
+                <hr class="border-secondary opacity-25">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="switchTab('rekapan', event)"><i class="fa-solid fa-chart-pie me-2"></i> Rekapan Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchTab('stok-sistem', event)"><i class="fa-solid fa-server me-2"></i> Stok Sistem</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchTab('stok-fisik', event)"><i class="fa-solid fa-boxes-stacked me-2"></i> Stok Fisik</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchTab('stok-masuk', event)"><i class="fa-solid fa-arrow-trend-down fa-rotate-180 me-2"></i> Stok Masuk</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchTab('stok-keluar', event)"><i class="fa-solid fa-arrow-trend-up me-2"></i> Stok Keluar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="#" onclick="switchTab('delivery-gantung', event)"><i class="fa-solid fa-clock-rotate-left me-2"></i> Delivery Gantung</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="#" onclick="switchTab('selisih', event)"><i class="fa-solid fa-triangle-exclamation me-2"></i> Laporan Selisih</a>
+                    </li>
+                    <li class="nav-item mt-3">
+                        <a class="nav-link text-danger bg-danger bg-opacity-10" href="#" onclick="switchTab('hapus-data', event)"><i class="fa-solid fa-trash-can me-2"></i> Kelola / Hapus Data</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                
+                <!-- Header Atas -->
+                <div class="main-header d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary fs-6 px-2 py-1" id="current-wh-badge">Gudang: H50</span>
+                            <h2 class="h4 mb-0 fw-bold text-dark" id="page-title">Rekapan Dashboard Gudang</h2>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1">Pantau dan kelola inventaris gudang terpilih secara real-time beserta lokasi Bin.</p>
+                    </div>
+                    <div class="mt-2 mt-md-0 d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="downloadTemplateExcel()"><i class="fa-solid fa-file-excel me-1"></i> Download Template (<span id="lbl-template-wh">H50</span>)</button>
+                        <label class="btn btn-primary-custom text-white shadow-sm cursor-pointer mb-0">
+                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> Upload Excel <input type="file" id="excelFile" accept=".xlsx, .xls" hidden onchange="handleExcelUpload(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- TAB: REKAPAN DASHBOARD -->
+                <div id="tab-rekapan" class="tab-content-section">
+                    <!-- FILTER TANGGAL DASHBOARD -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3 d-flex align-items-center gap-3 flex-wrap">
+                            <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-calendar-days me-1"></i> Filter Berdasarkan Tanggal STO:</label>
+                            <input type="date" id="filter-dashboard-tgl" class="form-control form-control-sm" style="width: 200px;" onchange="renderAll()">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetDashboardTanggal()">Tampilkan Semua Tanggal</button>
+                        </div>
+                    </div>
+
+                    <!-- 5 KARTU STATISTIK -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-semua" onclick="setStatFilter('semua')" style="border-left-color: var(--primary-color);">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3"><i class="fa-solid fa-box-open"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Total Item</p>
+                                        <h4 class="fw-bold mb-0" id="rekap-total-item">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-sesuai" onclick="setStatFilter('sesuai')" style="border-left-color: #10b981;">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-success bg-opacity-10 text-success me-3"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Sesuai</p>
+                                        <h4 class="fw-bold mb-0 text-success" id="rekap-sesuai">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-lebih" onclick="setStatFilter('lebih')" style="border-left-color: #3b82f6;">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-info bg-opacity-10 text-info me-3"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Selisih Lebih</p>
+                                        <h4 class="fw-bold mb-0 text-info" id="rekap-lebih">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-kurang" onclick="setStatFilter('kurang')" style="border-left-color: #ef4444;">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-danger bg-opacity-10 text-danger me-3"><i class="fa-solid fa-arrow-down-right-dots"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Barang Kurang</p>
+                                        <h4 class="fw-bold mb-0 text-danger" id="rekap-kurang">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-belum" onclick="setStatFilter('belum')" style="border-left-color: #f59e0b;">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Belum STO</p>
+                                        <h4 class="fw-bold mb-0 text-warning" id="rekap-belum">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="card-title fw-bold text-dark m-0">
+                                <i class="fa-solid fa-list-check me-2 text-primary"></i>Ringkasan Status Stok Gudang <span class="active-wh-text">H50</span> 
+                                <span id="active-filter-badge" class="badge bg-secondary ms-2 fs-6" style="font-size: 0.75rem !important;">Filter: Semua Data</span>
+                            </h5>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-success btn-sm text-white fw-bold" id="btn-export-filter" onclick="exportFilteredRekapanExcel()" style="display:none;"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Kategori Ini</button>
+                                <button class="btn btn-outline-secondary btn-sm" id="btn-reset-filter" onclick="setStatFilter('semua')" style="display:none;"><i class="fa-solid fa-rotate-left me-1"></i> Reset Filter</button>
+                                <div style="width: 260px;">
+                                    <input type="text" id="search-rekapan" class="form-control form-control-sm" placeholder="🔍 Cari (klik part number untuk detail)..." onkeyup="renderAll()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Kode Gudang</th>
+                                            <th>Lokasi Bin</th>
+                                            <th>Part Number</th>
+                                            <th>Nama Barang</th>
+                                            <th class="pe-4">Status Selisih (Klik untuk Detail)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-ringkasan-rekapan"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STOK SISTEM -->
+                <div id="tab-stok-sistem" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <span class="fw-bold small text-muted"><i class="fa-solid fa-server me-1"></i> Data Master Stok Sistem Gudang Aktif (Klik Part Number untuk detail & history)</span>
+                            <div style="width: 280px;">
+                                <input type="text" id="search-sistem" class="form-control form-control-sm" placeholder="🔍 Cari part number..." onkeyup="renderAll()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Gudang</th>
+                                            <th>Lokasi Bin</th>
+                                            <th>Part Number</th>
+                                            <th>Nama Barang</th>
+                                            <th class="pe-4">Stok Awal Sistem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-sistem"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STOK FISIK -->
+                <div id="tab-stok-fisik" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold small text-muted"><i class="fa-solid fa-boxes-stacked me-1"></i> Filter Ekspor:</span>
+                                <input type="date" id="filter-fisik-start" class="form-control form-control-sm" style="width: 140px;" onchange="renderAll()">
+                                <span class="text-muted small">s/d</span>
+                                <input type="date" id="filter-fisik-end" class="form-control form-control-sm" style="width: 140px;" onchange="renderAll()">
+                                <button class="btn btn-success btn-sm text-white fw-bold" onclick="exportStokFisikExcel()"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Excel Stok Fisik</button>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                <button class="btn btn-primary btn-sm text-white fw-bold" onclick="openInputFisikModal()"><i class="fa-solid fa-plus me-1"></i> Input / Edit Stok Fisik</button>
+                                <div style="width: 200px;">
+                                    <input type="text" id="search-fisik" class="form-control form-control-sm" placeholder="🔍 Cari..." onkeyup="renderAll()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr><th class="ps-4">Tanggal STO</th><th>Gudang</th><th>Lokasi Bin</th><th>Part Number</th><th>Nama Barang</th><th>Stok Fisik (Opname)</th><th>Status Selisih</th><th class="pe-4 text-center">Aksi</th></tr>
+                                    </thead>
+                                    <tbody id="table-fisik"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STOK MASUK -->
+                <div id="tab-stok-masuk" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3">
+                            <div class="row g-3 align-items-center justify-content-between">
+                                <div class="col-auto d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-filter me-1"></i> Filter Tanggal:</label>
+                                    <input type="date" id="filter-masuk-start" class="form-control form-control-sm" onchange="renderAll()">
+                                    <span class="text-muted">s/d</span>
+                                    <input type="date" id="filter-masuk-end" class="form-control form-control-sm" onchange="renderAll()">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('masuk')">Reset</button>
+                                </div>
+                                <div class="col-auto" style="width: 260px;">
+                                    <input type="text" id="search-masuk" class="form-control form-control-sm" placeholder="🔍 Cari data masuk..." onkeyup="renderAll()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr><th class="ps-4">Tanggal</th><th>Gudang</th><th>Lokasi Bin</th><th>Part Number</th><th>Nama Barang</th><th>User Wadig</th><th>Nama User</th><th class="pe-4">Jumlah Masuk</th></tr>
+                                    </thead>
+                                    <tbody id="table-masuk"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STOK KELUAR -->
+                <div id="tab-stok-keluar" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3">
+                            <div class="row g-3 align-items-center justify-content-between">
+                                <div class="col-auto d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-filter me-1"></i> Filter Tanggal:</label>
+                                    <input type="date" id="filter-keluar-start" class="form-control form-control-sm" onchange="renderAll()">
+                                    <span class="text-muted">s/d</span>
+                                    <input type="date" id="filter-keluar-end" class="form-control form-control-sm" onchange="renderAll()">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('keluar')">Reset</button>
+                                </div>
+                                <div class="col-auto" style="width: 260px;">
+                                    <input type="text" id="search-keluar" class="form-control form-control-sm" placeholder="🔍 Cari data keluar..." onkeyup="renderAll()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr><th class="ps-4">Tanggal</th><th>No. Delivery</th><th>Gudang</th><th>Lokasi Bin</th><th>Part Number</th><th>Nama Barang</th><th>User Wadig</th><th>Nama User</th><th class="pe-4">Jumlah Keluar</th></tr>
+                                    </thead>
+                                    <tbody id="table-keluar"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: DELIVERY GANTUNG -->
+                <div id="tab-delivery-gantung" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <span class="fw-bold small text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i> Daftar Delivery Gantung Gudang Aktif</span>
+                            <div style="width: 280px;">
+                                <input type="text" id="search-gantung" class="form-control form-control-sm" placeholder="🔍 Cari no delivery..." onkeyup="renderAll()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">No. Delivery</th>
+                                            <th>Lokasi Bin</th>
+                                            <th>Part Number</th>
+                                            <th>Material / Nama Barang</th>
+                                            <th class="pe-4">No. Kartu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-delivery-gantung"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SELISIH -->
+                <div id="tab-selisih" class="tab-content-section" style="display: none;">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body bg-light rounded-3 p-3">
+                            <div class="row g-3 align-items-center justify-content-between">
+                                <div class="col-auto d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-filter me-1"></i> Periode:</label>
+                                    <input type="date" id="filter-selisih-start" class="form-control form-control-sm" onchange="renderAll()">
+                                    <span class="text-muted">s/d</span>
+                                    <input type="date" id="filter-selisih-end" class="form-control form-control-sm" onchange="renderAll()">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('selisih')">Reset</button>
+                                </div>
+                                <div class="col-auto d-flex gap-2">
+                                    <div style="width: 220px;">
+                                        <input type="text" id="search-selisih" class="form-control form-control-sm" placeholder="🔍 Cari selisih..." onkeyup="renderAll()">
+                                    </div>
+                                    <button class="btn btn-success btn-sm text-white fw-bold" onclick="exportSelisihExcel()"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Selisih</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body px-0 pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Gudang</th>
+                                            <th>Lokasi Bin</th>
+                                            <th>Part Number</th>
+                                            <th>Nama Barang</th>
+                                            <th>Stok Awal Sistem</th>
+                                            <th>Total Masuk</th>
+                                            <th>Total Keluar</th>
+                                            <th>Stok Sistem Akhir</th>
+                                            <th>Stok Fisik Opname</th>
+                                            <th class="pe-4">Selisih & Status Waktu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-selisih"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: HAPUS DATA -->
+                <div id="tab-hapus-data" class="tab-content-section" style="display: none;">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm h-100 border-top border-danger border-4">
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-danger mb-3"><i class="fa-solid fa-trash-can me-2"></i>Hapus Item Master Barang (<span class="active-wh-text">H50</span>)</h5>
+                                    <p class="text-muted small">Pilih Part Number dari gudang aktif untuk dihapus.</p>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Pilih Barang (Master Stok Sistem):</label>
+                                        <select id="select-hapus-barang" class="form-select form-select-sm"></select>
+                                    </div>
+                                    <button class="btn btn-danger btn-sm w-100" onclick="hapusBarangMaster()"><i class="fa-solid fa-trash me-1"></i> Hapus Barang Ini</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card shadow-sm h-100 border-top border-warning border-4">
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-warning text-dark mb-3"><i class="fa-solid fa-calendar-xmark me-2"></i>Hapus Riwayat Berdasarkan Tanggal</h5>
+                                    <p class="text-muted small">Pilih jenis transaksi dan rentang tanggal pada gudang aktif.</p>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Jenis Transaksi:</label>
+                                        <select id="hapus-tgl-jenis" class="form-select form-select-sm">
+                                            <option value="masuk">Stok Masuk Harian</option>
+                                            <option value="keluar">Stok Keluar Harian</option>
+                                            <option value="fisik">Stok Fisik (Opname)</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold small">Dari Tanggal:</label>
+                                            <input type="date" id="hapus-tgl-start" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold small">Sampai Tanggal:</label>
+                                            <input type="date" id="hapus-tgl-end" class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-warning btn-sm text-dark fw-bold w-100" onclick="hapusRiwayatBerdasarkanTanggal()"><i class="fa-solid fa-trash-arrow-up me-1"></i> Hapus Transaksi Periode Ini</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="card shadow-sm border-top border-dark border-4">
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Pembersihan Cepat Gudang <span class="active-wh-text">H50</span></h5>
+                                    <p class="text-muted small">Tindakan instan untuk mengosongkan data gudang yang sedang aktif saja.</p>
+                                    
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="kosongkanRiwayatMasuk()"><i class="fa-solid fa-rotate-left me-1"></i> Kosongkan Masuk Gudang Ini</button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="kosongkanRiwayatKeluar()"><i class="fa-solid fa-rotate-left me-1"></i> Kosongkan Keluar Gudang Ini</button>
+                                        <button class="btn btn-outline-danger btn-sm ms-auto" onclick="resetPenuhSistem()"><i class="fa-solid fa-bomb me-1"></i> Reset Total Gudang Ini</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL INPUT / EDIT STOK FISIK (OPNAME) -->
+    <div class="modal fade" id="inputFisikModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-boxes-stacked me-2"></i>Form Input / Recount Stok Fisik</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <form id="form-input-fisik" onsubmit="saveStokFisikManual(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Tanggal STO / Opname:</label>
+                            <input type="date" id="input-fisik-tgl" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Gudang Aktif:</label>
+                            <input type="text" id="input-fisik-lokasi" class="form-control" readonly required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Lokasi Bin:</label>
+                            <input type="text" id="input-fisik-bin" class="form-control" placeholder="Contoh: A-01-02" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Part Number:</label>
+                            <input type="text" id="input-fisik-pn" class="form-control" placeholder="Contoh: PN-BOX-001" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Nama Barang:</label>
+                            <input type="text" id="input-fisik-nama" class="form-control" placeholder="Contoh: Kardus Box M" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Jumlah Stok Fisik (Opname):</label>
+                            <input type="number" id="input-fisik-qty" class="form-control" placeholder="0" min="0" required>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Simpan Stok Fisik</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL PART NUMBER -->
+    <div class="modal fade" id="detailPartModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+                <div class="modal-header bg-primary text-white" style="border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Detail Part Number: <span id="modal-pn-title" class="text-warning"></span> (Bin: <span id="modal-bin-title" class="text-info"></span>)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-dark mb-1">Nama Barang: <span id="modal-nama-barang" class="fw-normal text-secondary"></span> | Gudang: <span id="modal-wh-title" class="fw-bold text-primary"></span></h6>
+                    </div>
+
+                    <!-- TABEL STATUS LOKASI -->
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-white fw-bold text-primary py-3">
+                            <i class="fa-solid fa-warehouse me-2"></i>Status & Stok Terbaru
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr><th class="ps-3">Gudang</th><th>Lokasi Bin</th><th>Stok Awal Sistem</th><th>Stok Fisik (Opname Terakhir)</th><th>Status Keterangan</th><th class="pe-3 text-center">Aksi Edit Fisik</th></tr>
+                                    </thead>
+                                    <tbody id="modal-table-lokasi"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL DELIVERY GANTUNG -->
+                    <div class="card mb-4 shadow-sm border-info border-2">
+                        <div class="card-header bg-info bg-opacity-10 fw-bold text-info text-dark py-3">
+                            <i class="fa-solid fa-id-card me-2"></i>Delivery Gantung (Untuk Part Ini di Bin Ini)
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr><th class="ps-3">No. Delivery</th><th>Lokasi Bin</th><th>Material Deskripsi</th><th class="pe-3">No. Kartu</th></tr>
+                                    </thead>
+                                    <tbody id="modal-table-gantung"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-header bg-white fw-bold text-success py-3">
+                                    <i class="fa-solid fa-arrow-trend-down fa-rotate-180 me-2"></i>Riwayat Stok Masuk
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-custom align-middle mb-0">
+                                            <thead>
+                                                <tr><th class="ps-3">Tanggal</th><th>Lokasi Bin</th><th>User</th><th class="pe-3">Qty Masuk</th></tr>
+                                            </thead>
+                                            <tbody id="modal-table-masuk"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-header bg-white fw-bold text-danger py-3">
+                                    <i class="fa-solid fa-arrow-trend-up me-2"></i>Riwayat Stok Keluar
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-custom align-middle mb-0">
+                                            <thead>
+                                                <tr><th class="ps-3">Tanggal</th><th>No. Delivery</th><th>Lokasi Bin</th><th>User</th><th class="pe-3">Qty Keluar</th></tr>
+                                            </thead>
+                                            <tbody id="modal-table-keluar"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-white">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script Logika -->
+    <script>
+        const userWadigMapping = {
+            "ASTMUHZU0204": "OJI",
+            "AWALAW080474": "ALIP 2",
+            "BRATAS012368": "HADI",
+            "HASANU013827": "ADIT",
+            "PKSALIP66374": "ALIP 1",
+            "PKSFAHRY0806": "AHMAD",
+            "ABDHAR034256": "DANDI",
+            "ABDURR076790": "SATYA",
+            "ASTBARMA0113": "BANTUAN",
+            "ASTCITRA4298": "YUDA",
+            "ASTMUHFA0114": "ADI WIJAYA",
+            "ASTNURSA0208": "NUR SALAM",
+            "ASTTAKDI0771": "TAKDIR",
+            "PKSSYAHR0199": "ALUL"
+        };
+
+        function resolveUserNama(userWadigInput, userNamaInput) {
+            let userWadig = String(userWadigInput || '').trim().toUpperCase();
+            let userNama = String(userNamaInput || '').trim();
+
+            if (userWadigMapping[userWadig]) {
+                return { userWadig: userWadig, nama: userWadigMapping[userWadig] };
+            }
+
+            if (!userWadig && userNama) {
+                let upperName = userNama.toUpperCase();
+                for (let [wadigKey, namaVal] of Object.entries(userWadigMapping)) {
+                    if (namaVal.toUpperCase() === upperName || wadigKey.toUpperCase() === upperName) {
+                        return { userWadig: wadigKey, nama: namaVal };
+                    }
+                }
+            }
+
+            return { userWadig: userWadig || '-', nama: userNama || '-' };
+        }
+
+        // State Gudang Aktif (H50, H5A, H5B)
+        let currentWarehouse = 'H50';
+
+        let sistemData = JSON.parse(localStorage.getItem('gudang_sistemData')) || {};
+        let masterData = JSON.parse(localStorage.getItem('gudang_masterData')) || {};
+        let masukData = JSON.parse(localStorage.getItem('gudang_masukData')) || {};
+        let keluarData = JSON.parse(localStorage.getItem('gudang_keluarData')) || {};
+        let deliveryGantungData = JSON.parse(localStorage.getItem('gudang_deliveryGantung')) || {};
+        
+        let currentStatFilter = 'semua';
+
+        function switchWarehouse(wh) {
+            currentWarehouse = wh;
+            document.querySelectorAll('.warehouse-badge').forEach(b => b.classList.remove('active-wh'));
+            document.getElementById(`wh-btn-${wh}`).classList.add('active-wh');
+            
+            document.getElementById('current-wh-badge').innerText = `Gudang: ${wh}`;
+            document.getElementById('lbl-template-wh').innerText = wh;
+            document.querySelectorAll('.active-wh-text').forEach(el => el.innerText = wh);
+
+            setStatFilter('semua');
+        }
+
+        function getWhData(storageObj, wh = currentWarehouse) {
+            if (!storageObj[wh]) {
+                storageObj[wh] = [];
+            }
+            return storageObj[wh];
+        }
+
+        function normPN(v) {
+            return String(v === undefined || v === null ? '' : v).trim().toLowerCase();
+        }
+
+        function normBin(v) {
+            let b = String(v === undefined || v === null ? '-' : v).trim();
+            return b === '' ? '-' : b.toLowerCase();
+        }
+        
+        function safePN(pn) {
+            return String(pn || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        }
+
+        function safeBin(bin) {
+            return String(bin || '-').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        }
+
+        // PERUBAHAN UTAMA: Kombinasi Part Number + Bin agar lokasi beda tidak saling menimpa/menjumlahkan
+        function buildStokKey(pn, bin) {
+            return normPN(pn) + '||' + normBin(bin);
+        }
+
+        function getSetPartGantung() {
+            let s = new Set();
+            let gList = getWhData(deliveryGantungData);
+            gList.forEach(g => s.add(buildStokKey(g['Part Number'], g['Bin'])));
+            return s;
+        }
+
+        function getMapFisikTerbaru() {
+            let mapFisik = {};
+            let mapTanggalFisik = {};
+            let mList = getWhData(masterData);
+            
+            let sortedMaster = [...mList].sort((a, b) => {
+                let tA = a['Tanggal STO'] || '';
+                let tB = b['Tanggal STO'] || '';
+                return tA.localeCompare(tB);
+            });
+
+            sortedMaster.forEach(f => {
+                let key = buildStokKey(f['Part Number'], f['Bin']);
+                mapFisik[key] = parseInt(f['Stok Fisik Awal']) || 0;
+                mapTanggalFisik[key] = f['Tanggal STO'] || '-';
+            });
+            return { mapFisik, mapTanggalFisik };
+        }
+
+        function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung) {
+            let effectiveKeluar = hasGantung ? 0 : totalKeluar;
+            let stokSistemAkhir = stokSistemAwal + totalMasuk - effectiveKeluar;
+            let result = {
+                stokSistemAwal, totalMasuk, totalKeluar, effectiveKeluar,
+                hasGantung, stokSistemAkhir,
+                fisikAkhir: null,
+                selisih: null, statusKategoriCode: '', statusKeterangan: ''
+            };
+            if (fisikAwal === null) {
+                result.statusKategoriCode = 'belum';
+                result.statusKeterangan = 'Belum Di-STO';
+            } else {
+                let fisikAkhir = fisikAwal;
+                result.fisikAkhir = fisikAkhir;
+                let selisih = fisikAkhir - stokSistemAkhir;
+                result.selisih = selisih;
+                if (selisih > 0) {
+                    result.statusKategoriCode = 'lebih';
+                    result.statusKeterangan = 'Selisih Lebih (+' + selisih + ')';
+                } else if (selisih < 0) {
+                    result.statusKategoriCode = 'kurang';
+                    result.statusKeterangan = 'Barang Kurang (' + selisih + ')';
+                } else {
+                    result.statusKategoriCode = 'sesuai';
+                    result.statusKeterangan = 'Sesuai';
+                }
+            }
+            return result;
+        }
+
+        function checkAndAutoRegisterSistem(partNumber, namaBarang, binVal = '', whTarget = currentWarehouse) {
+            if (!partNumber) return;
+            let cleanPn = String(partNumber).trim();
+            let cleanNama = String(namaBarang || cleanPn).trim();
+            let cleanBin = String(binVal || '').trim() || '-';
+            let sList = getWhData(sistemData, whTarget);
+
+            let exists = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
+            if (!exists) {
+                sList.push({
+                    'Part Number': cleanPn,
+                    'Nama Barang': cleanNama,
+                    'Bin': cleanBin,
+                    'Stok Sistem Awal': 0
+                });
+            } else {
+                if (cleanNama && cleanNama !== cleanPn && (exists['Nama Barang'] === exists['Part Number'] || !exists['Nama Barang'])) {
+                    exists['Nama Barang'] = cleanNama;
+                }
+            }
+        }
+
+        function setStatFilter(filterType) {
+            currentStatFilter = filterType;
+            
+            document.querySelectorAll('.card-stat').forEach(el => el.classList.remove('active-filter'));
+            document.getElementById(`card-filter-${filterType}`).classList.add('active-filter');
+
+            let badge = document.getElementById('active-filter-badge');
+            let resetBtn = document.getElementById('btn-reset-filter');
+            let exportFilterBtn = document.getElementById('btn-export-filter');
+
+            if (filterType === 'semua') {
+                badge.innerText = "Filter: Semua Data";
+                badge.className = "badge bg-secondary ms-2 fs-6";
+                resetBtn.style.display = 'none';
+                exportFilterBtn.style.display = 'none';
+            } else {
+                resetBtn.style.display = 'inline-block';
+                exportFilterBtn.style.display = 'inline-block';
+                if (filterType === 'sesuai') {
+                    badge.innerText = "Filter: Stok Sesuai";
+                    badge.className = "badge bg-success ms-2 fs-6";
+                } else if (filterType === 'lebih') {
+                    badge.innerText = "Filter: Selisih Lebih";
+                    badge.className = "badge bg-info text-dark ms-2 fs-6";
+                } else if (filterType === 'kurang') {
+                    badge.innerText = "Filter: Barang Kurang";
+                    badge.className = "badge bg-danger ms-2 fs-6";
+                } else if (filterType === 'belum') {
+                    badge.innerText = "Filter: Belum STO Opname";
+                    badge.className = "badge bg-warning text-dark ms-2 fs-6";
+                }
+            }
+
+            renderAll();
+        }
+
+        function resetDashboardTanggal() {
+            document.getElementById('filter-dashboard-tgl').value = '';
+            renderAll();
+        }
+
+        function saveDataToStorage() {
+            localStorage.setItem('gudang_sistemData', JSON.stringify(sistemData));
+            localStorage.setItem('gudang_masterData', JSON.stringify(masterData));
+            localStorage.setItem('gudang_masukData', JSON.stringify(masukData));
+            localStorage.setItem('gudang_keluarData', JSON.stringify(keluarData));
+            localStorage.setItem('gudang_deliveryGantung', JSON.stringify(deliveryGantungData));
+        }
+
+        function parseExcelDate(val) {
+            if (!val) return '';
+            let str = String(val).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+            let num = Number(val);
+            if (!isNaN(num) && num > 30000 && num < 60000) {
+                let utc_days = Math.floor(num - 25569);
+                let utc_value = utc_days * 86400;
+                let date_info = new Date(utc_value * 1000);
+                let year = date_info.getUTCFullYear();
+                let month = String(date_info.getUTCMonth() + 1).padStart(2, '0');
+                let day = String(date_info.getUTCDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            let parsed = new Date(val);
+            if (!isNaN(parsed.getTime())) {
+                let year = parsed.getFullYear();
+                let month = String(parsed.getMonth() + 1).padStart(2, '0');
+                let day = String(parsed.getDate()).padStart(2, '0');
+                if (year > 2000) return `${year}-${month}-${day}`;
+            }
+            return str;
+        }
+
+        function getVal(row, possibleKeys) {
+            let keys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                let cleanPk = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let k of keys) {
+                    let cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (cleanK === cleanPk || cleanK.includes(cleanPk) || cleanPk.includes(cleanK)) {
+                        return row[k];
+                    }
+                }
+            }
+            return '';
+        }
+
+        // ============================================================
+        // MODAL INPUT / EDIT STOK FISIK
+        // ============================================================
+        function openInputFisikModal() {
+            let today = new Date().toISOString().split('T')[0];
+            document.getElementById('input-fisik-tgl').value = today;
+            document.getElementById('input-fisik-lokasi').value = currentWarehouse;
+            document.getElementById('input-fisik-bin').value = '';
+            document.getElementById('input-fisik-pn').value = '';
+            document.getElementById('input-fisik-nama').value = '';
+            document.getElementById('input-fisik-qty').value = '';
+            document.getElementById('input-fisik-pn').readOnly = false;
+            document.getElementById('input-fisik-bin').readOnly = false;
+
+            let myModal = new bootstrap.Modal(document.getElementById('inputFisikModal'));
+            myModal.show();
+        }
+
+        function editStokFisikRow(index) {
+            let mList = getWhData(masterData);
+            let item = mList[index];
+            if (!item) return;
+
+            document.getElementById('input-fisik-tgl').value = item['Tanggal STO'] || new Date().toISOString().split('T')[0];
+            document.getElementById('input-fisik-lokasi').value = currentWarehouse;
+            document.getElementById('input-fisik-bin').value = item['Bin'] || '';
+            document.getElementById('input-fisik-bin').readOnly = true;
+            document.getElementById('input-fisik-pn').value = item['Part Number'] || '';
+            document.getElementById('input-fisik-pn').readOnly = true;
+            document.getElementById('input-fisik-nama').value = item['Nama Barang'] || '';
+            document.getElementById('input-fisik-qty').value = item['Stok Fisik Awal'] || 0;
+
+            let myModal = new bootstrap.Modal(document.getElementById('inputFisikModal'));
+            myModal.show();
+        }
+
+        function editFisikFromModalDetail(pn, bin) {
+            let today = new Date().toISOString().split('T')[0];
+            let mList = getWhData(masterData);
+            let sList = getWhData(sistemData);
+            
+            let foundMaster = mList.find(m => normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
+            let foundSistem = sList.find(s => normPN(s['Part Number']) === normPN(pn) && normBin(s['Bin']) === normBin(bin));
+
+            document.getElementById('input-fisik-tgl').value = foundMaster ? (foundMaster['Tanggal STO'] || today) : today;
+            document.getElementById('input-fisik-lokasi').value = currentWarehouse;
+            document.getElementById('input-fisik-bin').value = bin;
+            document.getElementById('input-fisik-bin').readOnly = true;
+            document.getElementById('input-fisik-pn').value = pn;
+            document.getElementById('input-fisik-pn').readOnly = true;
+            document.getElementById('input-fisik-nama').value = foundMaster ? foundMaster['Nama Barang'] : (foundSistem ? foundSistem['Nama Barang'] : pn);
+            document.getElementById('input-fisik-qty').value = foundMaster ? (foundMaster['Stok Fisik Awal'] || 0) : 0;
+
+            let detailModalEl = document.getElementById('detailPartModal');
+            let detailModalObj = bootstrap.Modal.getInstance(detailModalEl);
+            if (detailModalObj) detailModalObj.hide();
+
+            let myModal = new bootstrap.Modal(document.getElementById('inputFisikModal'));
+            myModal.show();
+        }
+
+        function saveStokFisikManual(event) {
+            event.preventDefault();
+            let tgl = document.getElementById('input-fisik-tgl').value;
+            let bin = document.getElementById('input-fisik-bin').value.trim() || '-';
+            let pn = document.getElementById('input-fisik-pn').value.trim();
+            let nama = document.getElementById('input-fisik-nama').value.trim();
+            let qty = parseInt(document.getElementById('input-fisik-qty').value) || 0;
+
+            if (!tgl || !pn || !bin) {
+                alert("Mohon lengkapi Tanggal, Lokasi Bin, dan Part Number!");
+                return;
+            }
+
+            let mList = getWhData(masterData);
+            let existingIndex = mList.findIndex(m => m['Tanggal STO'] === tgl && normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
+            
+            if (existingIndex >= 0) {
+                mList[existingIndex]['Stok Fisik Awal'] = qty;
+                mList[existingIndex]['Nama Barang'] = nama || mList[existingIndex]['Nama Barang'];
+            } else {
+                let editIndex = mList.findIndex(m => normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
+                if (editIndex >= 0 && document.getElementById('input-fisik-pn').readOnly) {
+                    mList[editIndex]['Tanggal STO'] = tgl;
+                    mList[editIndex]['Stok Fisik Awal'] = qty;
+                    mList[editIndex]['Nama Barang'] = nama || mList[editIndex]['Nama Barang'];
+                } else {
+                    mList.push({
+                        'Tanggal STO': tgl,
+                        'Bin': bin,
+                        'Part Number': pn,
+                        'Nama Barang': nama || pn,
+                        'Stok Fisik Awal': qty
+                    });
+                }
+            }
+
+            checkAndAutoRegisterSistem(pn, nama, bin);
+            saveDataToStorage();
+            renderAll();
+
+            let modalEl = document.getElementById('inputFisikModal');
+            let modalObj = bootstrap.Modal.getInstance(modalEl);
+            modalObj.hide();
+
+            alert("Data stok fisik berhasil disimpan ke gudang " + currentWarehouse + "!");
+        }
+
+        function hapusStokFisikRow(index) {
+            if (confirm("Apakah Anda yakin ingin menghapus catatan stok fisik ini?")) {
+                let mList = getWhData(masterData);
+                mList.splice(index, 1);
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function downloadTemplateExcel() {
+            let wb = XLSX.utils.book_new();
+
+            let wsSistem = XLSX.utils.json_to_sheet([
+                { "Gudang": "H50", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Nama Barang": "Kardus Box M", "Stok Sistem Awal": 120 }
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsSistem, "Master_Stok_Sistem");
+
+            let wsFisik = XLSX.utils.json_to_sheet([
+                { "Gudang": "H50", "Tanggal STO": "2026-09-01", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Nama Barang": "Kardus Box M", "Stok Fisik Awal": 100 }
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsFisik, "Master_Stok_Fisik");
+
+            let wsMasuk = XLSX.utils.json_to_sheet([
+                { "Gudang": "H50", Tanggal: "2026-09-01", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Nama Barang": "Kardus Box M", "User Wadig": "ASTMUHZU0204", "Nama User": "OJI", "Jumlah Masuk": 30 }
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsMasuk, "Stok_Masuk_Harian");
+
+            let wsKeluar = XLSX.utils.json_to_sheet([
+                { "Gudang": "H50", Tanggal: "2026-09-02", "No. Delivery": "DO-9921", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Nama Barang": "Kardus Box M", "User Wadig": "BRATAS012368", "Nama User": "HADI", "Jumlah Keluar": 10 }
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsKeluar, "Stok_Keluar_Harian");
+
+            let wsGantung = XLSX.utils.json_to_sheet([
+                { "Gudang": "H50", "No. Delivery": "DO-9921", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Material Deskripsi": "Kardus Box M", "No. Kartu": "KARTU-01" }
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsGantung, "Delivery_Gantung");
+
+            XLSX.writeFile(wb, `Template_Monitoring_Multi_Gudang.xlsx`);
+        }
+
+        // ============================================================
+        // FITUR UPLOAD 1 FILE EXCEL UNTUK SEMUA GUDANG (H50, H5A, H5B)
+        // ============================================================
+        function handleExcelUpload(e) {
+            let file = e.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, {type: 'array'});
+
+                workbook.SheetNames.forEach(sheetName => {
+                    let cleanSheetName = sheetName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    let sheetRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                    if (sheetRows.length === 0) return;
+
+                    sheetRows.forEach(r => {
+                        let rawWh = String(getVal(r, ['Gudang', 'Warehouse', 'Wh', 'Lokasi', 'Plant']) || '').trim().toUpperCase();
+                        let targetWh = 'H50';
+                        if (rawWh.includes('H5A')) targetWh = 'H5A';
+                        else if (rawWh.includes('H5B')) targetWh = 'H5B';
+                        else if (rawWh.includes('H50')) targetWh = 'H50';
+                        else {
+                            if (cleanSheetName.includes('h5a')) targetWh = 'H5A';
+                            else if (cleanSheetName.includes('h5b')) targetWh = 'H5B';
+                            else if (cleanSheetName.includes('h50')) targetWh = 'H50';
+                        }
+
+                        let sList = getWhData(sistemData, targetWh);
+                        let mList = getWhData(masterData, targetWh);
+                        let inList = getWhData(masukData, targetWh);
+                        let outList = getWhData(keluarData, targetWh);
+                        let gList = getWhData(deliveryGantungData, targetWh);
+
+                        let pn = getVal(r, ['Part Number', 'PartNumber', 'SKU', 'Kode Barang', 'Kode']);
+                        let nama = getVal(r, ['Nama Barang', 'Namabarang', 'Item', 'Description', 'Barang', 'Material Deskripsi', 'MaterialDeskripsi']);
+                        let bin = getVal(r, ['Bin', 'Lokasi Bin', 'BinLocation', 'Rak', 'StorageBin']) || '-';
+
+                        if (cleanSheetName.includes('gantung') || cleanSheetName.includes('pending')) {
+                            let doNum = String(getVal(r, ['No. Delivery', 'NoDelivery', 'Delivery', 'No DO', 'DO'])) || '-';
+                            let partNum = String(pn) || '-';
+                            let desc = String(nama) || '-';
+                            let kartu = String(getVal(r, ['No. Kartu', 'NoKartu', 'Kartu', 'Card'])) || '-';
+                            
+                            if (!gList.some(g => g['No. Delivery'] === doNum && normPN(g['Part Number']) === normPN(partNum) && normBin(g['Bin']) === normBin(bin))) {
+                                gList.push({
+                                    'No. Delivery': doNum,
+                                    'Bin': bin,
+                                    'Part Number': partNum,
+                                    'Material Deskripsi': desc,
+                                    'No. Kartu': kartu
+                                });
+                            }
+                        }
+                        else if (cleanSheetName.includes('fisik') || cleanSheetName.includes('opname')) {
+                            let tglSto = parseExcelDate(getVal(r, ['Tanggal STO', 'TanggalSTO', 'Tgl STO', 'Tanggal', 'Date'])) || '-';
+                            let fisikQty = Number(getVal(r, ['Stok Fisik Awal', 'StokFisikAwal', 'Stok Fisik', 'Fisik', 'Opname'])) || 0;
+                            
+                            let existIdx = mList.findIndex(m => m['Tanggal STO'] === tglSto && normPN(m['Part Number']) === normPN(pn) && normBin(m['Bin']) === normBin(bin));
+                            if (existIdx >= 0) {
+                                mList[existIdx]['Stok Fisik Awal'] = fisikQty;
+                                if (nama) mList[existIdx]['Nama Barang'] = nama;
+                            } else {
+                                mList.push({
+                                    'Tanggal STO': tglSto,
+                                    'Bin': bin,
+                                    'Part Number': pn,
+                                    'Nama Barang': nama || pn,
+                                    'Stok Fisik Awal': fisikQty
+                                });
+                            }
+                            checkAndAutoRegisterSistem(pn, nama, bin, targetWh);
+                        }
+                        else if (cleanSheetName.includes('sistem') || cleanSheetName.includes('master')) {
+                            let sysAwal = Number(getVal(r, ['Stok Sistem Awal', 'StokSistemAwal', 'Stok Sistem', 'Stok Awal', 'Sistem', 'Stok'])) || 0;
+                            let existIdx = sList.findIndex(s => normPN(s['Part Number']) === normPN(pn) && normBin(s['Bin']) === normBin(bin));
+                            if (existIdx >= 0) {
+                                sList[existIdx]['Stok Sistem Awal'] = sysAwal;
+                                if (nama) sList[existIdx]['Nama Barang'] = nama;
+                            } else {
+                                sList.push({
+                                    'Part Number': pn,
+                                    'Nama Barang': nama || pn,
+                                    'Bin': bin,
+                                    'Stok Sistem Awal': sysAwal
+                                });
+                            }
+                        }
+                        else if (cleanSheetName.includes('masuk')) {
+                            let rawWadig = getVal(r, ['User Wadig', 'UserWadig', 'Wadig', 'User']);
+                            let rawNama = getVal(r, ['Nama User', 'NamaUser', 'Nama']);
+                            let resolved = resolveUserNama(rawWadig, rawNama);
+                            let tglMasuk = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl']));
+                            let qtyMasuk = Number(getVal(r, ['Jumlah Masuk', 'JumlahMasuk', 'Qty Masuk', 'Masuk', 'Qty', 'Jumlah'])) || 0;
+
+                            checkAndAutoRegisterSistem(pn, nama, bin, targetWh);
+                            inList.push({
+                                Tanggal: tglMasuk,
+                                Bin: bin,
+                                'Part Number': pn,
+                                'Nama Barang': nama,
+                                'User Wadig': resolved.userWadig,
+                                'Nama User': resolved.nama,
+                                'Jumlah Masuk': qtyMasuk
+                            });
+                        }
+                        else if (cleanSheetName.includes('keluar') || cleanSheetName.includes('delivery')) {
+                            let rawWadig = getVal(r, ['User Wadig', 'UserWadig', 'Wadig', 'User']);
+                            let rawNama = getVal(r, ['Nama User', 'NamaUser', 'Nama']);
+                            let resolved = resolveUserNama(rawWadig, rawNama);
+                            let tglKeluar = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl']));
+                            let kDo = getVal(r, ['No. Delivery', 'NoDelivery', 'Delivery', 'No DO', 'DO']) || '-';
+                            let qtyKeluar = Number(getVal(r, ['Jumlah Keluar', 'JumlahKeluar', 'Qty Keluar', 'Keluar', 'Qty', 'Jumlah'])) || 0;
+
+                            outList.push({
+                                Tanggal: tglKeluar,
+                                'No. Delivery': kDo,
+                                Bin: bin,
+                                'Part Number': pn,
+                                'Nama Barang': nama,
+                                'User Wadig': resolved.userWadig,
+                                'Nama User': resolved.nama,
+                                'Jumlah Keluar': qtyKeluar
+                            });
+                        }
+                        else {
+                            let sysAwal = Number(getVal(r, ['Stok Sistem Awal', 'StokSistemAwal', 'Stok Sistem', 'Stok Awal', 'Sistem', 'Stok'])) || 0;
+                            if (pn) {
+                                let existIdx = sList.findIndex(s => normPN(s['Part Number']) === normPN(pn) && normBin(s['Bin']) === normBin(bin));
+                                if (existIdx >= 0) {
+                                    sList[existIdx]['Stok Sistem Awal'] = sysAwal;
+                                    if (nama) sList[existIdx]['Nama Barang'] = nama;
+                                } else {
+                                    sList.push({
+                                        'Part Number': pn,
+                                        'Nama Barang': nama || pn,
+                                        'Bin': bin,
+                                        'Stok Sistem Awal': sysAwal
+                                    });
+                                }
+                            }
+                        }
+                    });
+                });
+
+                saveDataToStorage();
+                alert("File Excel berhasil di-upload dan didistribusikan ke masing-masing gudang (H50, H5A, H5B)!");
+                renderAll();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function resetFilter(type) {
+            let startEl = document.getElementById(`filter-${type}-start`);
+            let endEl = document.getElementById(`filter-${type}-end`);
+            if (startEl) startEl.value = '';
+            if (endEl) endEl.value = '';
+            let searchEl = document.getElementById(`search-${type}`);
+            if (searchEl) searchEl.value = '';
+            renderAll();
+        }
+
+        function exportFilteredRekapanExcel() {
+            let exportRows = [];
+            let inList = getWhData(masukData);
+            let outList = getWhData(keluarData);
+            let sList = getWhData(sistemData);
+            let mList = getWhData(masterData);
+
+            let mapMasuk = {};
+            inList.forEach(m => {
+                let key = buildStokKey(m['Part Number'], m['Bin']);
+                mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+            });
+
+            let mapKeluar = {};
+            outList.forEach(k => {
+                let key = buildStokKey(k['Part Number'], k['Bin']);
+                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+            });
+
+            let mapSistemAwal = {};
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                mapSistemAwal[key] = parseInt(s['Stok Sistem Awal']) || 0;
+            });
+
+            let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
+            let setPartGantung = getSetPartGantung();
+            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+
+            let masterListToProcess = [];
+            let processedKeys = new Set();
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                processedKeys.add(key);
+                masterListToProcess.push({ 'Part Number': s['Part Number'], 'Nama Barang': s['Nama Barang'], 'Bin': s['Bin'] });
+            });
+            mList.forEach(f => {
+                if (filterTgl && f['Tanggal STO'] !== filterTgl) return;
+                let key = buildStokKey(f['Part Number'], f['Bin']);
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    masterListToProcess.push({ 'Part Number': f['Part Number'], 'Nama Barang': f['Nama Barang'], 'Bin': f['Bin'] });
+                }
+            });
+
+            masterListToProcess.forEach(item => {
+                let pn = item['Part Number'];
+                let nama = item['Nama Barang'];
+                let bin = item['Bin'] || '-';
+                let key = buildStokKey(pn, bin);
+
+                if (filterTgl && mapTanggalFisik[key] !== filterTgl) return;
+
+                let stokSistemAwal = mapSistemAwal[key] || 0;
+                let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
+                let tglFisik = mapTanggalFisik[key] || '-';
+                let totalMasuk = mapMasuk[key] || 0;
+                let totalKeluar = mapKeluar[key] || 0;
+                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let stokSistemAkhir = hitung.stokSistemAkhir;
+                let statusKategoriCode = hitung.statusKategoriCode;
+                let statusKeterangan = hitung.statusKeterangan;
+
+                if (currentStatFilter !== 'semua' && currentStatFilter !== statusKategoriCode) return;
+
+                exportRows.push({
+                    "Gudang": currentWarehouse,
+                    "Lokasi Bin": bin,
+                    "Part Number": pn,
+                    "Nama Barang": nama,
+                    "Stok Sistem Akhir": stokSistemAkhir,
+                    "Tanggal STO Terakhir": tglFisik,
+                    "Stok Fisik Opname": fisikAwal === null ? "Belum Di-STO" : fisikAwal,
+                    "Kategori Status": statusKeterangan
+                });
+            });
+
+            if (exportRows.length === 0) {
+                alert("Tidak ada data untuk diexport pada kategori ini.");
+                return;
+            }
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.json_to_sheet(exportRows);
+            XLSX.utils.book_append_sheet(wb, ws, `Laporan_${currentStatFilter.toUpperCase()}`);
+            XLSX.writeFile(wb, `Laporan_Gudang_${currentWarehouse}_${currentStatFilter}.xlsx`);
+        }
+
+        function exportStokFisikExcel() {
+            let startTgl = document.getElementById('filter-fisik-start').value;
+            let endTgl = document.getElementById('filter-fisik-end').value;
+
+            let sList = getWhData(sistemData);
+            let inList = getWhData(masukData);
+            let outList = getWhData(keluarData);
+            let mList = getWhData(masterData);
+
+            let mapSistemAwal = {};
+            sList.forEach(s => {
+                mapSistemAwal[buildStokKey(s['Part Number'], s['Bin'])] = parseInt(s['Stok Sistem Awal']) || 0;
+            });
+            let mapMasuk = {};
+            inList.forEach(m => {
+                let k = buildStokKey(m['Part Number'], m['Bin']);
+                mapMasuk[k] = (mapMasuk[k] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+            });
+            let mapKeluar = {};
+            outList.forEach(k => {
+                let key = buildStokKey(k['Part Number'], k['Bin']);
+                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+            });
+            let setPartGantung = getSetPartGantung();
+
+            let exportRows = [];
+            mList.forEach(item => {
+                let tgl = parseExcelDate(item['Tanggal STO']);
+                if (startTgl && tgl && tgl < startTgl) return;
+                if (endTgl && tgl && tgl > endTgl) return;
+
+                let pn = item['Part Number'];
+                let bin = item['Bin'] || '-';
+                let key = buildStokKey(pn, bin);
+                let sysAwal = mapSistemAwal[key] || 0;
+                let tMasuk = mapMasuk[key] || 0;
+                let tKeluar = mapKeluar[key] || 0;
+                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+
+                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung);
+
+                exportRows.push({
+                    "Tanggal STO": item['Tanggal STO'] || '-',
+                    "Gudang": currentWarehouse,
+                    "Lokasi Bin": bin,
+                    "Part Number": pn,
+                    "Nama Barang": item['Nama Barang'] || '-',
+                    "Stok Fisik (Opname)": item['Stok Fisik Awal'] || 0,
+                    "Stok Sistem Akhir": hitung.stokSistemAkhir,
+                    "Status Selisih": hitung.statusKeterangan
+                });
+            });
+
+            if (exportRows.length === 0) {
+                alert("Tidak ada data stok fisik pada rentang tanggal tersebut.");
+                return;
+            }
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.json_to_sheet(exportRows);
+            XLSX.utils.book_append_sheet(wb, ws, "Stok_Fisik_Opname");
+            XLSX.writeFile(wb, `Laporan_Stok_Fisik_${currentWarehouse}.xlsx`);
+        }
+
+        function exportSelisihExcel() {
+            let selisihStart = document.getElementById('filter-selisih-start').value;
+            let selisihEnd = document.getElementById('filter-selisih-end').value;
+            let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
+
+            let inList = getWhData(masukData);
+            let outList = getWhData(keluarData);
+            let sList = getWhData(sistemData);
+            let mList = getWhData(masterData);
+
+            let filteredMasukForSelisih = inList.filter(m => {
+                let tgl = parseExcelDate(m.Tanggal);
+                if (!tgl) return true;
+                if (selisihStart && tgl < selisihStart) return false;
+                if (selisihEnd && tgl > selisihEnd) return false;
+                return true;
+            });
+
+            let filteredKeluarForSelisih = outList.filter(k => {
+                let tgl = parseExcelDate(k.Tanggal);
+                if (!tgl) return true;
+                if (selisihStart && tgl < selisihStart) return false;
+                if (selisihEnd && tgl > selisihEnd) return false;
+                return true;
+            });
+
+            let mapMasuk = {};
+            filteredMasukForSelisih.forEach(m => {
+                let key = buildStokKey(m['Part Number'], m['Bin']);
+                mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+            });
+
+            let mapKeluar = {};
+            filteredKeluarForSelisih.forEach(k => {
+                let key = buildStokKey(k['Part Number'], k['Bin']);
+                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+            });
+
+            let mapSistemAwal = {};
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                mapSistemAwal[key] = parseInt(s['Stok Sistem Awal']) || 0;
+            });
+
+            let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
+            let setPartGantung = getSetPartGantung();
+
+            let exportRows = [];
+            let masterListToProcess = [];
+            let processedKeys = new Set();
+
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                processedKeys.add(key);
+                masterListToProcess.push({ 'Part Number': s['Part Number'], 'Nama Barang': s['Nama Barang'], 'Bin': s['Bin'] });
+            });
+
+            mList.forEach(f => {
+                let key = buildStokKey(f['Part Number'], f['Bin']);
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    masterListToProcess.push({ 'Part Number': f['Part Number'], 'Nama Barang': f['Nama Barang'], 'Bin': f['Bin'] });
+                }
+            });
+
+            masterListToProcess.forEach(item => {
+                let pn = item['Part Number'];
+                let nama = item['Nama Barang'];
+                let bin = item['Bin'] || '-';
+                let key = buildStokKey(pn, bin);
+                let tglFisik = mapTanggalFisik[key] || '-';
+
+                let validTglFisik = parseExcelDate(tglFisik) || '';
+                if (selisihStart || selisihEnd) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(validTglFisik)) return;
+                    if (selisihStart && validTglFisik < selisihStart) return;
+                    if (selisihEnd && validTglFisik > selisihEnd) return;
+                }
+
+                let stokSistemAwal = mapSistemAwal[key] || 0;
+                let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
+                let totalMasuk = mapMasuk[key] || 0;
+                let totalKeluar = mapKeluar[key] || 0;
+                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let stokSistemAkhir = hitung.stokSistemAkhir;
+                let selisih = hitung.selisih === null ? stokSistemAkhir : hitung.selisih;
+                let statusKeterangan = hitung.statusKeterangan;
+                let fisikDisplay = fisikAwal === null ? "Belum Di-STO" : fisikAwal;
+
+                let rowText = `${pn} ${nama} ${bin}`.toLowerCase();
+                if (searchSelisih && !rowText.includes(searchSelisih)) return;
+
+                exportRows.push({
+                    "Gudang": currentWarehouse,
+                    "Lokasi Bin": bin,
+                    "Part Number": pn,
+                    "Nama Barang": nama,
+                    "Stok Awal Sistem": stokSistemAwal,
+                    "Total Masuk": totalMasuk,
+                    "Total Keluar": totalKeluar,
+                    "Stok Sistem Akhir": stokSistemAkhir,
+                    "Tanggal STO Terakhir": tglFisik,
+                    "Stok Fisik Opname": fisikDisplay,
+                    "Selisih": selisih,
+                    "Status Keterangan": statusKeterangan
+                });
+            });
+
+            if (exportRows.length === 0) {
+                alert("Tidak ada data laporan selisih untuk diexport.");
+                return;
+            }
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.json_to_sheet(exportRows);
+            XLSX.utils.book_append_sheet(wb, ws, "Kontrol_Selisih_STO");
+            XLSX.writeFile(wb, `Laporan_Kontrol_Selisih_${currentWarehouse}.xlsx`);
+        }
+
+        function showPartDetailModal(partNumber, binLocation, event) {
+            if (event) event.stopPropagation();
+
+            let cleanPn = String(partNumber).trim();
+            let cleanBin = String(binLocation || '-').trim();
+
+            document.getElementById('modal-pn-title').innerText = cleanPn;
+            document.getElementById('modal-bin-title').innerText = cleanBin;
+            document.getElementById('modal-wh-title').innerText = currentWarehouse;
+
+            let foundNama = "-";
+            let lokasiHtml = "";
+            let masukHtml = "";
+            let keluarHtml = "";
+            let gantungHtml = "";
+
+            let sList = getWhData(sistemData);
+            let mList = getWhData(masterData);
+            let inList = getWhData(masukData);
+            let outList = getWhData(keluarData);
+            let gList = getWhData(deliveryGantungData);
+
+            let matchSys = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
+            if (matchSys) foundNama = matchSys['Nama Barang'];
+            else {
+                let matchFisik = mList.find(f => normPN(f['Part Number']) === normPN(cleanPn) && normBin(f['Bin']) === normBin(cleanBin));
+                if (matchFisik) foundNama = matchFisik['Nama Barang'];
+            }
+            document.getElementById('modal-nama-barang').innerText = foundNama;
+
+            let sysAwal = 0;
+            let foundS = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
+            if (foundS) sysAwal = parseInt(foundS['Stok Sistem Awal']) || 0;
+
+            let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
+            let key = buildStokKey(cleanPn, cleanBin);
+            let fisikVal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
+            let tglFisik = mapTanggalFisik[key] || '-';
+
+            let hasGantung = gList.some(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
+
+            let tMasuk = 0;
+            inList.forEach(m => {
+                if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin)) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
+            });
+
+            let tKeluar = 0;
+            outList.forEach(k => {
+                if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin)) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
+            });
+
+            let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
+            let sysAkhir = hitung.stokSistemAkhir;
+
+            let statusBadge = "";
+            let fisikDisplay = "";
+
+            if (fisikVal === null) {
+                statusBadge = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum Di-STO</span>`;
+                fisikDisplay = `<span class="text-muted fst-italic">Belum Opname</span>`;
+            } else {
+                let selisih = hitung.selisih;
+                fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
+                if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
+                else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
+                else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
+            }
+
+            lokasiHtml = `<tr>
+                <td class="ps-3 fw-bold">${currentWarehouse}</td>
+                <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
+                <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
+                <td>${fisikDisplay}</td>
+                <td>${statusBadge}</td>
+                <td class="pe-3 text-center">
+                    <button class="btn btn-sm btn-primary py-0 px-2 fw-bold" onclick="editFisikFromModalDetail('${safePN(cleanPn)}', '${safeBin(cleanBin)}')"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Fisik</button>
+                </td>
+            </tr>`;
+            document.getElementById('modal-table-lokasi').innerHTML = lokasiHtml;
+
+            let filteredGantungModal = gList.filter(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
+            if (filteredGantungModal.length === 0) {
+                gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini.</td></tr>`;
+            } else {
+                filteredGantungModal.forEach(g => {
+                    gantungHtml += `<tr>
+                        <td class="ps-3"><code class="text-primary">${g['No. Delivery']}</code></td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
+                        <td>${g['Material Deskripsi']}</td>
+                        <td class="pe-3"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('modal-table-gantung').innerHTML = gantungHtml;
+
+            let filteredMasuk = inList.filter(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin));
+            if (filteredMasuk.length === 0) {
+                masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini.</td></tr>`;
+            } else {
+                filteredMasuk.forEach(m => {
+                    let tgl = parseExcelDate(m.Tanggal);
+                    masukHtml += `<tr>
+                        <td class="ps-3">${tgl || '-'}</td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-dark">${m['Nama User'] || m['User Wadig']}</span></td>
+                        <td class="pe-3 text-success fw-bold">+${m['Jumlah Masuk']}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('modal-table-masuk').innerHTML = masukHtml;
+
+            let filteredKeluar = outList.filter(k => normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin));
+            if (filteredKeluar.length === 0) {
+                keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini.</td></tr>`;
+            } else {
+                filteredKeluar.forEach(k => {
+                    let tgl = parseExcelDate(k.Tanggal);
+                    keluarHtml += `<tr>
+                        <td class="ps-3">${tgl || '-'}</td>
+                        <td><code class="text-primary">${k['No. Delivery'] || '-'}</code></td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-dark">${k['Nama User'] || k['User Wadig']}</span></td>
+                        <td class="pe-3 text-danger fw-bold">-${k['Jumlah Keluar']}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('modal-table-keluar').innerHTML = keluarHtml;
+
+            let myModal = new bootstrap.Modal(document.getElementById('detailPartModal'));
+            myModal.show();
+        }
+
+        function hapusBarangMaster() {
+            let selectVal = document.getElementById('select-hapus-barang').value;
+            if(!selectVal) {
+                alert("Tidak ada barang yang dipilih.");
+                return;
+            }
+            let [targetPn, targetBin] = selectVal.split('||');
+            if(confirm(`Yakin ingin menghapus barang ${targetPn} di bin ${targetBin} dari gudang ${currentWarehouse}?`)) {
+                let sList = getWhData(sistemData);
+                let mList = getWhData(masterData);
+                
+                sistemData[currentWarehouse] = sList.filter(item => !(normPN(item['Part Number']) === normPN(targetPn) && normBin(item['Bin']) === normBin(targetBin)));
+                masterData[currentWarehouse] = mList.filter(item => !(normPN(item['Part Number']) === normPN(targetPn) && normBin(item['Bin']) === normBin(targetBin)));
+                
+                saveDataToStorage();
+                alert("Barang berhasil dihapus!");
+                renderAll();
+            }
+        }
+
+        function hapusRiwayatBerdasarkanTanggal() {
+            let jenis = document.getElementById('hapus-tgl-jenis').value;
+            let start = document.getElementById('hapus-tgl-start').value;
+            let end = document.getElementById('hapus-tgl-end').value;
+
+            if(!start || !end) {
+                alert("Mohon tentukan tanggal awal dan akhir.");
+                return;
+            }
+
+            if(confirm(`Yakin ingin menghapus riwayat ${jenis} pada rentang tanggal tersebut di gudang ${currentWarehouse}?`)) {
+                if(jenis === 'masuk') {
+                    let inList = getWhData(masukData);
+                    masukData[currentWarehouse] = inList.filter(m => {
+                        let tgl = parseExcelDate(m.Tanggal);
+                        if (!tgl) return true;
+                        return !(tgl >= start && tgl <= end);
+                    });
+                } else if(jenis === 'keluar') {
+                    let outList = getWhData(keluarData);
+                    keluarData[currentWarehouse] = outList.filter(k => {
+                        let tgl = parseExcelDate(k.Tanggal);
+                        if (!tgl) return true;
+                        return !(tgl >= start && tgl <= end);
+                    });
+                } else if(jenis === 'fisik') {
+                    let mList = getWhData(masterData);
+                    masterData[currentWarehouse] = mList.filter(f => {
+                        let tgl = parseExcelDate(f['Tanggal STO']);
+                        if (!tgl) return true;
+                        return !(tgl >= start && tgl <= end);
+                    });
+                }
+                saveDataToStorage();
+                alert("Data berhasil dihapus!");
+                renderAll();
+            }
+        }
+
+        function kosongkanRiwayatMasuk() {
+            if(confirm(`Yakin ingin mengosongkan seluruh riwayat Masuk di gudang ${currentWarehouse}?`)) {
+                masukData[currentWarehouse] = [];
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function kosongkanRiwayatKeluar() {
+            if(confirm(`Yakin ingin mengosongkan seluruh riwayat Keluar di gudang ${currentWarehouse}?`)) {
+                keluarData[currentWarehouse] = [];
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function resetPenuhSistem() {
+            if(confirm(`PERINGATAN: Semua data di gudang ${currentWarehouse} akan dihapus total. Lanjutkan?`)) {
+                sistemData[currentWarehouse] = [];
+                masterData[currentWarehouse] = [];
+                masukData[currentWarehouse] = [];
+                keluarData[currentWarehouse] = [];
+                deliveryGantungData[currentWarehouse] = [];
+                saveDataToStorage();
+                alert("Gudang berhasil direset total.");
+                renderAll();
+            }
+        }
+
+        function renderAll() {
+            let sList = getWhData(sistemData);
+            let mList = getWhData(masterData);
+            let inList = getWhData(masukData);
+            let outList = getWhData(keluarData);
+            let gList = getWhData(deliveryGantungData);
+
+            let keluarDoSet = new Set();
+            outList.forEach(k => {
+                let doNum = String(k['No. Delivery'] || '').trim().toLowerCase();
+                if (doNum && doNum !== '-') keluarDoSet.add(doNum);
+            });
+
+            deliveryGantungData[currentWarehouse] = gList.filter(g => {
+                let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                return !keluarDoSet.has(gDo);
+            });
+            gList = deliveryGantungData[currentWarehouse];
+            saveDataToStorage();
+
+            inList.forEach(m => {
+                if (m['Part Number']) {
+                    checkAndAutoRegisterSistem(m['Part Number'], m['Nama Barang'], m['Bin']);
+                }
+            });
+
+            let htmlSistem = '', htmlFisik = '', htmlSelisih = '', htmlRingkasan = '', htmlMasuk = '', htmlKeluar = '', htmlGantung = '', htmlSelectHapus = '';
+            let countSesuai = 0, countLebih = 0, countKurang = 0, countBelumSto = 0;
+
+            let filterDashboardTgl = document.getElementById('filter-dashboard-tgl').value;
+            let searchRekapan = (document.getElementById('search-rekapan')?.value || '').toLowerCase();
+            let searchSistem = (document.getElementById('search-sistem')?.value || '').toLowerCase();
+            let searchFisik = (document.getElementById('search-fisik')?.value || '').toLowerCase();
+            let searchMasuk = (document.getElementById('search-masuk')?.value || '').toLowerCase();
+            let searchKeluar = (document.getElementById('search-keluar')?.value || '').toLowerCase();
+            let searchGantung = (document.getElementById('search-gantung')?.value || '').toLowerCase();
+            let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
+            
+            let selisihStartVal = document.getElementById('filter-selisih-start')?.value;
+            let selisihEndVal = document.getElementById('filter-selisih-end')?.value;
+
+            let mapSistemAwal = {};
+            sList.forEach(s => {
+                mapSistemAwal[buildStokKey(s['Part Number'], s['Bin'])] = parseInt(s['Stok Sistem Awal']) || 0;
+            });
+
+            let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
+            let setPartGantung = getSetPartGantung();
+
+            sList.forEach(item => {
+                let itemBin = item['Bin'] || '-';
+                let rowText = `${item['Part Number']} ${item['Nama Barang']} ${itemBin}`.toLowerCase();
+                if (searchSistem && !rowText.includes(searchSistem)) return;
+
+                htmlSistem += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">
+                    <td class="ps-4 fw-bold">${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${itemBin}</span></td>
+                    <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">${item['Part Number']}</code></td>
+                    <td>${item['Nama Barang']}</td>
+                    <td class="pe-4"><strong>${item['Stok Sistem Awal'] || 0}</strong></td>
+                </tr>`;
+            });
+
+            mList.forEach((item, idx) => {
+                let itemTgl = parseExcelDate(item['Tanggal STO']);
+                let itemBin = item['Bin'] || '-';
+                let rowText = `${item['Tanggal STO']} ${item['Part Number']} ${item['Nama Barang']} ${itemBin}`.toLowerCase();
+                if (searchFisik && !rowText.includes(searchFisik)) return;
+
+                let keyFisik = buildStokKey(item['Part Number'], itemBin);
+                let sysAwalFisik = mapSistemAwal[keyFisik] || 0;
+                let tMasukFisik = 0;
+                inList.forEach(m => { if (normPN(m['Part Number']) === normPN(item['Part Number']) && normBin(m['Bin']) === normBin(itemBin)) tMasukFisik += parseInt(m['Jumlah Masuk']) || 0; });
+                let tKeluarFisik = 0;
+                outList.forEach(k => { if (normPN(k['Part Number']) === normPN(item['Part Number']) && normBin(k['Bin']) === normBin(itemBin)) tKeluarFisik += parseInt(k['Jumlah Keluar']) || 0; });
+                let hasGantungFisik = setPartGantung.has(buildStokKey(item['Part Number'], itemBin));
+                let hitungFisikRow = hitungStatusStok(sysAwalFisik, tMasukFisik, tKeluarFisik, item['Stok Fisik Awal'], hasGantungFisik);
+
+                htmlFisik += `<tr class="clickable-row">
+                    <td class="ps-4" onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)"><span class="badge bg-secondary bg-opacity-10 text-dark fw-semibold">${item['Tanggal STO'] || '-'}</span></td>
+                    <td onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${itemBin}</span></td>
+                    <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">${item['Part Number']}</code></td>
+                    <td onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">${item['Nama Barang']}</td>
+                    <td onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)"><strong>${item['Stok Fisik Awal'] || 0}</strong></td>
+                    <td onclick="showPartDetailModal('${safePN(item['Part Number'])}', '${safeBin(itemBin)}', event)">${hitungFisikRow.statusKeterangan}</td>
+                    <td class="pe-4 text-center">
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 me-1" onclick="editStokFisikRow(${idx})" title="Edit Baris Ini"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="hapusStokFisikRow(${idx})" title="Hapus Baris Ini"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>`;
+            });
+
+            sList.forEach(item => {
+                let itemBin = item['Bin'] || '-';
+                htmlSelectHapus += `<option value="${item['Part Number']}||${itemBin}">${item['Part Number']} (Bin: ${itemBin}) - ${item['Nama Barang']}</option>`;
+            });
+
+            gList.forEach(g => {
+                let gBin = g['Bin'] || '-';
+                let rowText = `${g['No. Delivery']} ${g['Part Number']} ${g['Material Deskripsi']} ${g['No. Kartu']} ${gBin}`.toLowerCase();
+                if (searchGantung && !rowText.includes(searchGantung)) return;
+
+                htmlGantung += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(g['Part Number'])}', '${safeBin(gBin)}', event)">
+                    <td class="ps-4"><code class="text-primary fw-bold">${g['No. Delivery']}</code></td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${gBin}</span></td>
+                    <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(g['Part Number'])}', '${safeBin(gBin)}', event)">${g['Part Number']}</code></td>
+                    <td>${g['Material Deskripsi']}</td>
+                    <td class="pe-4"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
+                </tr>`;
+            });
+
+            let mapMasukAgg = {};
+            inList.forEach(m => {
+                let key = buildStokKey(m['Part Number'], m['Bin']);
+                mapMasukAgg[key] = (mapMasukAgg[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+            });
+
+            let mapKeluarAgg = {};
+            outList.forEach(k => {
+                let key = buildStokKey(k['Part Number'], k['Bin']);
+                mapKeluarAgg[key] = (mapKeluarAgg[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+            });
+
+            let masterListToProcess = [];
+            let processedKeys = new Set();
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                processedKeys.add(key);
+                masterListToProcess.push({ 'Part Number': s['Part Number'], 'Nama Barang': s['Nama Barang'], 'Bin': s['Bin'] });
+            });
+            mList.forEach(f => {
+                if (filterDashboardTgl && f['Tanggal STO'] !== filterDashboardTgl) return;
+                let key = buildStokKey(f['Part Number'], f['Bin']);
+                if (!processedKeys.has(key)) {
+                    processedKeys.add(key);
+                    masterListToProcess.push({ 'Part Number': f['Part Number'], 'Nama Barang': f['Nama Barang'], 'Bin': f['Bin'] });
+                }
+            });
+
+            let filteredItemCount = 0;
+
+            masterListToProcess.forEach(item => {
+                let pn = item['Part Number'];
+                let nama = item['Nama Barang'];
+                let bin = item['Bin'] || '-';
+                let key = buildStokKey(pn, bin);
+
+                if (filterDashboardTgl && mapTanggalFisik[key] !== filterDashboardTgl) return;
+
+                let stokSistemAwal = mapSistemAwal[key] || 0;
+                let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
+                let tglFisik = mapTanggalFisik[key] || '-';
+                let totalMasuk = mapMasukAgg[key] || 0;
+                let totalKeluar = mapKeluarAgg[key] || 0;
+                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let effectiveKeluar = hitung.effectiveKeluar;
+                let stokSistemAkhir = hitung.stokSistemAkhir;
+                let statusKategoriCode = hitung.statusKategoriCode;
+
+                let badgeRingkasan = "";
+                let badgeSelisih = "";
+                let fisikDisplay = "";
+
+                if (statusKategoriCode === "belum") {
+                    countBelumSto++;
+                    badgeRingkasan = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum STO (Opname)</span>`;
+                    badgeSelisih = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum STO</span>`;
+                    fisikDisplay = `<span class="text-muted fst-italic">Belum Di-opname</span>`;
+                } else {
+                    let selisih = hitung.selisih;
+                    fisikDisplay = `${fisikAwal} <small class="text-muted">(${tglFisik})</small>`;
+
+                    if(statusKategoriCode === "lebih") {
+                        countLebih++;
+                        badgeRingkasan = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
+                        badgeSelisih = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">+${selisih}</span>`;
+                    } else if(statusKategoriCode === "kurang") {
+                        countKurang++;
+                        badgeRingkasan = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
+                        badgeSelisih = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">${selisih}</span>`;
+                    } else {
+                        countSesuai++;
+                        badgeRingkasan = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
+                        badgeSelisih = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">0</span>`;
+                    }
+                }
+
+                filteredItemCount++;
+
+                if (currentStatFilter !== 'semua' && currentStatFilter !== statusKategoriCode) {
+                    return;
+                }
+
+                let rowTextRekap = `${pn} ${nama} ${bin} ${statusKategoriCode}`.toLowerCase();
+                if (!searchRekapan || rowTextRekap.includes(searchRekapan)) {
+                    htmlRingkasan += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
+                        <td class="ps-4 fw-bold">${currentWarehouse}</td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${bin}</span></td>
+                        <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</code></td>
+                        <td>${nama}</td>
+                        <td class="pe-4">${badgeRingkasan}</td>
+                    </tr>`;
+                }
+
+                let rowTextSelisih = `${pn} ${nama} ${bin}`.toLowerCase();
+                let matchSelisihSearch = (!searchSelisih || rowTextSelisih.includes(searchSelisih));
+                
+                let matchSelisihTgl = true;
+                let validSelisihTgl = parseExcelDate(tglFisik) || '';
+                if (selisihStartVal || selisihEndVal) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(validSelisihTgl)) {
+                        matchSelisihTgl = false;
+                    } else {
+                        if (selisihStartVal && validSelisihTgl < selisihStartVal) matchSelisihTgl = false;
+                        if (selisihEndVal && validSelisihTgl > selisihEndVal) matchSelisihTgl = false;
+                    }
+                }
+
+                if (matchSelisihSearch && matchSelisihTgl) {
+                    htmlSelisih += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
+                        <td class="ps-4 fw-bold">${currentWarehouse}</td>
+                        <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${bin}</span></td>
+                        <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</code></td>
+                        <td>${nama}</td>
+                        <td>${stokSistemAwal}</td>
+                        <td>+${totalMasuk}</td>
+                        <td>-${effectiveKeluar}</td>
+                        <td><strong>${stokSistemAkhir}</strong></td>
+                        <td>${fisikDisplay}</td>
+                        <td class="pe-4">${badgeSelisih}</td>
+                    </tr>`;
+                }
+            });
+
+            let masukStart = document.getElementById('filter-masuk-start').value;
+            let masukEnd = document.getElementById('filter-masuk-end').value;
+            inList.forEach(m => {
+                let formattedDate = parseExcelDate(m.Tanggal);
+                if (masukStart && formattedDate && formattedDate < masukStart) return;
+                if (masukEnd && formattedDate && formattedDate > masukEnd) return;
+
+                let mBin = m['Bin'] || '-';
+                let rowText = `${formattedDate} ${m['Part Number']} ${m['Nama Barang']} ${m['User Wadig']} ${m['Nama User']} ${mBin}`.toLowerCase();
+                if (searchMasuk && !rowText.includes(searchMasuk)) return;
+
+                htmlMasuk += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(m['Part Number'])}', '${safeBin(mBin)}', event)">
+                    <td class="ps-4">${formattedDate || '-'}</td>
+                    <td>${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${mBin}</span></td>
+                    <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(m['Part Number'])}', '${safeBin(mBin)}', event)">${m['Part Number']}</code></td>
+                    <td>${m['Nama Barang']}</td>
+                    <td><code>${m['User Wadig']}</code></td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${m['Nama User']}</span></td>
+                    <td class="pe-4 text-success fw-bold">+${m['Jumlah Masuk']}</td>
+                </tr>`;
+            });
+
+            let keluarStart = document.getElementById('filter-keluar-start').value;
+            let keluarEnd = document.getElementById('filter-keluar-end').value;
+            outList.forEach(k => {
+                let formattedDate = parseExcelDate(k.Tanggal);
+                if (keluarStart && formattedDate && formattedDate < keluarStart) return;
+                if (keluarEnd && formattedDate && formattedDate > keluarEnd) return;
+
+                let kBin = k['Bin'] || '-';
+                let rowText = `${formattedDate} ${k['No. Delivery']} ${k['Part Number']} ${k['Nama Barang']} ${k['User Wadig']} ${k['Nama User']} ${kBin}`.toLowerCase();
+                if (searchKeluar && !rowText.includes(searchKeluar)) return;
+
+                htmlKeluar += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(k['Part Number'])}', '${safeBin(kBin)}', event)">
+                    <td class="ps-4">${formattedDate || '-'}</td>
+                    <td><code class="text-primary">${k['No. Delivery']}</code></td>
+                    <td>${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${kBin}</span></td>
+                    <td><code class="part-number-link" onclick="showPartDetailModal('${safePN(k['Part Number'])}', '${safeBin(kBin)}', event)">${k['Part Number']}</code></td>
+                    <td>${k['Nama Barang']}</td>
+                    <td><code>${k['User Wadig']}</code></td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${k['Nama User']}</span></td>
+                    <td class="pe-4 text-danger fw-bold">-${k['Jumlah Keluar']}</td>
+                </tr>`;
+            });
+
+            document.getElementById('table-sistem').innerHTML = htmlSistem || '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada data stok sistem.</td></tr>';
+            document.getElementById('table-fisik').innerHTML = htmlFisik || '<tr><td colspan="8" class="text-center text-muted py-3">Belum ada data stok fisik.</td></tr>';
+            document.getElementById('table-ringkasan-rekapan').innerHTML = htmlRingkasan || '<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada data rekap.</td></tr>';
+            document.getElementById('table-masuk').innerHTML = htmlMasuk || '<tr><td colspan="8" class="text-center text-muted py-3">Tidak ada riwayat stok masuk.</td></tr>';
+            document.getElementById('table-keluar').innerHTML = htmlKeluar || '<tr><td colspan="9" class="text-center text-muted py-3">Tidak ada riwayat stok keluar.</td></tr>';
+            document.getElementById('table-delivery-gantung').innerHTML = htmlGantung || '<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada delivery gantung.</td></tr>';
+            document.getElementById('table-selisih').innerHTML = htmlSelisih || '<tr><td colspan="10" class="text-center text-muted py-3">Tidak ada data selisih.</td></tr>';
+            
+            let selectHapusEl = document.getElementById('select-hapus-barang');
+            if (selectHapusEl) selectHapusEl.innerHTML = htmlSelectHapus || '<option value="">(Kosong)</option>';
+
+            document.getElementById('rekap-total-item').innerText = filteredItemCount;
+            document.getElementById('rekap-sesuai').innerText = countSesuai;
+            document.getElementById('rekap-lebih').innerText = countLebih;
+            document.getElementById('rekap-kurang').innerText = countKurang;
+            document.getElementById('rekap-belum').innerText = countBelumSto;
+        }
+
+        function switchTab(tabId, event) {
+            if (event) event.preventDefault();
+            document.querySelectorAll('.tab-content-section').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
+
+            let targetSection = document.getElementById(`tab-${tabId}`);
+            if (targetSection) targetSection.style.display = 'block';
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            let titles = {
+                'rekapan': 'Rekapan Dashboard Gudang',
+                'stok-sistem': 'Data Master Stok Sistem',
+                'stok-fisik': 'Data Stok Fisik / Opname (STO)',
+                'stok-masuk': 'Riwayat Stok Masuk Harian',
+                'stok-keluar': 'Riwayat Stok Keluar Harian',
+                'delivery-gantung': 'Daftar Delivery Gantung',
+                'selisih': 'Laporan Kontrol Selisih Stok',
+                'hapus-data': 'Kelola & Hapus Data Sistem'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Dashboard Gudang';
+        }
+
+        window.onload = function() {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
