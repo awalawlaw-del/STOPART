@@ -294,7 +294,7 @@
                                 <button class="btn btn-success btn-sm text-white fw-bold" id="btn-export-filter" onclick="exportFilteredRekapanExcel()" style="display:none;"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Kategori Ini</button>
                                 <button class="btn btn-outline-secondary btn-sm" id="btn-reset-filter" onclick="setStatFilter('semua')" style="display:none;"><i class="fa-solid fa-rotate-left me-1"></i> Reset Filter</button>
                                 <div style="width: 260px;">
-                                    <input type="text" id="search-rekapan" class="form-control form-control-sm" placeholder="🔍 Cari (klik part number untuk detail)..." onkeyup="renderAll()">
+                                    <input type="text" id="search-rekapan" class="form-control form-control-sm" placeholder="🔍 Cari (klik part number)..." onkeyup="handleSearchInput('rekapan')">
                                 </div>
                             </div>
                         </div>
@@ -313,6 +313,8 @@
                                     <tbody id="table-ringkasan-rekapan"></tbody>
                                 </table>
                             </div>
+                            <!-- Pagination Container -->
+                            <div id="pagination-rekapan" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -323,7 +325,7 @@
                         <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <span class="fw-bold small text-muted"><i class="fa-solid fa-server me-1"></i> Data Master Stok Sistem Gudang Aktif (Klik Part Number untuk detail & history)</span>
                             <div style="width: 280px;">
-                                <input type="text" id="search-sistem" class="form-control form-control-sm" placeholder="🔍 Cari part number..." onkeyup="renderAll()">
+                                <input type="text" id="search-sistem" class="form-control form-control-sm" placeholder="🔍 Cari part number..." onkeyup="handleSearchInput('sistem')">
                             </div>
                         </div>
                     </div>
@@ -343,6 +345,7 @@
                                     <tbody id="table-sistem"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-sistem" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -361,7 +364,7 @@
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <button class="btn btn-primary btn-sm text-white fw-bold" onclick="openInputFisikModal()"><i class="fa-solid fa-plus me-1"></i> Input / Edit Stok Fisik</button>
                                 <div style="width: 200px;">
-                                    <input type="text" id="search-fisik" class="form-control form-control-sm" placeholder="🔍 Cari..." onkeyup="renderAll()">
+                                    <input type="text" id="search-fisik" class="form-control form-control-sm" placeholder="🔍 Cari..." onkeyup="handleSearchInput('fisik')">
                                 </div>
                             </div>
                         </div>
@@ -376,6 +379,7 @@
                                     <tbody id="table-fisik"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-fisik" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -393,7 +397,7 @@
                                     <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('masuk')">Reset</button>
                                 </div>
                                 <div class="col-auto" style="width: 260px;">
-                                    <input type="text" id="search-masuk" class="form-control form-control-sm" placeholder="🔍 Cari data masuk..." onkeyup="renderAll()">
+                                    <input type="text" id="search-masuk" class="form-control form-control-sm" placeholder="🔍 Cari data masuk..." onkeyup="handleSearchInput('masuk')">
                                 </div>
                             </div>
                         </div>
@@ -408,6 +412,7 @@
                                     <tbody id="table-masuk"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-masuk" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -425,7 +430,7 @@
                                     <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('keluar')">Reset</button>
                                 </div>
                                 <div class="col-auto" style="width: 260px;">
-                                    <input type="text" id="search-keluar" class="form-control form-control-sm" placeholder="🔍 Cari data keluar..." onkeyup="renderAll()">
+                                    <input type="text" id="search-keluar" class="form-control form-control-sm" placeholder="🔍 Cari data keluar..." onkeyup="handleSearchInput('keluar')">
                                 </div>
                             </div>
                         </div>
@@ -440,6 +445,7 @@
                                     <tbody id="table-keluar"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-keluar" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -450,7 +456,7 @@
                         <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <span class="fw-bold small text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i> Daftar Delivery Gantung Gudang Aktif</span>
                             <div style="width: 280px;">
-                                <input type="text" id="search-gantung" class="form-control form-control-sm" placeholder="🔍 Cari no delivery..." onkeyup="renderAll()">
+                                <input type="text" id="search-gantung" class="form-control form-control-sm" placeholder="🔍 Cari no delivery..." onkeyup="handleSearchInput('gantung')">
                             </div>
                         </div>
                     </div>
@@ -470,6 +476,7 @@
                                     <tbody id="table-delivery-gantung"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-gantung" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -488,7 +495,7 @@
                                 </div>
                                 <div class="col-auto d-flex gap-2">
                                     <div style="width: 220px;">
-                                        <input type="text" id="search-selisih" class="form-control form-control-sm" placeholder="🔍 Cari selisih..." onkeyup="renderAll()">
+                                        <input type="text" id="search-selisih" class="form-control form-control-sm" placeholder="🔍 Cari selisih..." onkeyup="handleSearchInput('selisih')">
                                     </div>
                                     <button class="btn btn-success btn-sm text-white fw-bold" onclick="exportSelisihExcel()"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Selisih</button>
                                 </div>
@@ -516,6 +523,7 @@
                                     <tbody id="table-selisih"></tbody>
                                 </table>
                             </div>
+                            <div id="pagination-selisih" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
                         </div>
                     </div>
                 </div>
@@ -646,7 +654,7 @@
                         <h6 class="fw-bold text-dark mb-1">Nama Barang: <span id="modal-nama-barang" class="fw-normal text-secondary"></span> | Gudang: <span id="modal-wh-title" class="fw-bold text-primary"></span></h6>
                     </div>
 
-                    <!-- TABEL STATUS LOKASI (DIPERBARUI: MENAMPILKAN SEMUA LOKASI/BIN LAIN DENGAN PART NUMBER SAMA) -->
+                    <!-- TABEL STATUS LOKASI -->
                     <div class="card mb-4 shadow-sm border-primary border-2">
                         <div class="card-header bg-primary bg-opacity-10 fw-bold text-primary py-3 d-flex justify-content-between align-items-center">
                             <span><i class="fa-solid fa-warehouse me-2"></i>Status & Stok Part Number Ini di Semua Lokasi / Bin (Gudang <span class="active-wh-text">H50</span>)</span>
@@ -768,8 +776,19 @@
             return { userWadig: userWadig || '-', nama: userNama || '-' };
         }
 
-        // State Gudang Aktif (H50, H5A, H5B)
+        // State Gudang Aktif & Pagination
         let currentWarehouse = 'H50';
+        const pageSize = 50;
+        let currentPages = {
+            rekapan: 1,
+            sistem: 1,
+            fisik: 1,
+            masuk: 1,
+            keluar: 1,
+            gantung: 1,
+            selisih: 1
+        };
+        let searchTimeouts = {};
 
         let sistemData = JSON.parse(localStorage.getItem('gudang_sistemData')) || {};
         let masterData = JSON.parse(localStorage.getItem('gudang_masterData')) || {};
@@ -779,8 +798,52 @@
         
         let currentStatFilter = 'semua';
 
+        // Debounce search function integration
+        function handleSearchInput(tabKey) {
+            currentPages[tabKey] = 1; // Reset ke halaman 1 saat mengetik pencarian
+            if (searchTimeouts[tabKey]) clearTimeout(searchTimeouts[tabKey]);
+            searchTimeouts[tabKey] = setTimeout(() => {
+                renderAll();
+            }, 300);
+        }
+
+        function changePage(tabKey, targetPage) {
+            currentPages[tabKey] = targetPage;
+            renderAll();
+        }
+
+        function renderPagination(tabKey, totalData) {
+            let totalPages = Math.ceil(totalData / pageSize) || 1;
+            let currentPage = currentPages[tabKey];
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            currentPages[tabKey] = currentPage;
+
+            let startItem = totalData === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            let endItem = Math.min(currentPage * pageSize, totalData);
+
+            let paginationEl = document.getElementById(`pagination-${tabKey}`);
+            if (!paginationEl) return;
+
+            let infoText = `<span class="text-muted small">Menampilkan ${startItem} - ${endItem} dari total ${totalData} data</span>`;
+            
+            let btnPrevDisabled = currentPage === 1 ? 'disabled' : '';
+            let btnNextDisabled = currentPage >= totalPages ? 'disabled' : '';
+
+            let controlsHtml = `
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" ${btnPrevDisabled} onclick="changePage('${tabKey}', ${currentPage - 1})"><i class="fa-solid fa-chevron-left me-1"></i> Sebelumnya</button>
+                    <button class="btn btn-outline-secondary disabled fw-bold text-dark">Hal ${currentPage} dari ${totalPages}</button>
+                    <button class="btn btn-outline-secondary" ${btnNextDisabled} onclick="changePage('${tabKey}', ${currentPage + 1})">Berikutnya <i class="fa-solid fa-chevron-right ms-1"></i></button>
+                </div>
+            `;
+
+            paginationEl.innerHTML = infoText + controlsHtml;
+        }
+
         function switchWarehouse(wh) {
             currentWarehouse = wh;
+            Object.keys(currentPages).forEach(k => currentPages[k] = 1);
             document.querySelectorAll('.warehouse-badge').forEach(b => b.classList.remove('active-wh'));
             document.getElementById(`wh-btn-${wh}`).classList.add('active-wh');
             
@@ -815,7 +878,6 @@
             return String(bin || '-').replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
         }
 
-        // Kombinasi Part Number + Bin agar lokasi beda tidak saling menimpa/menjumlahkan
         function buildStokKey(pn, bin) {
             return normPN(pn) + '||' + normBin(bin);
         }
@@ -901,6 +963,7 @@
 
         function setStatFilter(filterType) {
             currentStatFilter = filterType;
+            currentPages.rekapan = 1;
             
             document.querySelectorAll('.card-stat').forEach(el => el.classList.remove('active-filter'));
             document.getElementById(`card-filter-${filterType}`).classList.add('active-filter');
@@ -937,6 +1000,7 @@
 
         function resetDashboardTanggal() {
             document.getElementById('filter-dashboard-tgl').value = '';
+            currentPages.rekapan = 1;
             renderAll();
         }
 
@@ -988,7 +1052,6 @@
             return '';
         }
 
-        // MODAL INPUT / EDIT STOK FISIK
         function openInputFisikModal() {
             let today = new Date().toISOString().split('T')[0];
             document.getElementById('input-fisik-tgl').value = today;
@@ -1134,7 +1197,6 @@
             XLSX.writeFile(wb, `Template_Monitoring_Multi_Gudang.xlsx`);
         }
 
-        // FITUR UPLOAD 1 FILE EXCEL UNTUK SEMUA GUDANG (H50, H5A, H5B)
         function handleExcelUpload(e) {
             let file = e.target.files[0];
             if (!file) return;
@@ -1294,6 +1356,7 @@
             if (endEl) endEl.value = '';
             let searchEl = document.getElementById(`search-${type}`);
             if (searchEl) searchEl.value = '';
+            currentPages[type === 'masuk' ? 'masuk' : type === 'keluar' ? 'keluar' : type === 'selisih' ? 'selisih' : type] = 1;
             renderAll();
         }
 
@@ -1602,18 +1665,16 @@
             }
             document.getElementById('modal-nama-barang').innerText = foundNama;
 
-            // KUMPULKAN SEMUA BIN/LOKASI DI GUDANG AKTIF INI YANG MEMILIKI PART NUMBER YANG SAMA
             let allBinsForThisPart = new Set();
             sList.forEach(s => { if (normPN(s['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(s['Bin'])); });
             mList.forEach(m => { if (normPN(m['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(m['Bin'])); });
             inList.forEach(i => { if (normPN(i['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(i['Bin'])); });
             outList.forEach(o => { if (normPN(o['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(o['Bin'])); });
-            allBinsForThisPart.add(normBin(cleanBin)); // pastikan bin yang diklik masuk
+            allBinsForThisPart.add(normBin(cleanBin));
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
             let setPartGantung = getSetPartGantung();
 
-            // Render baris untuk setiap lokasi/bin yang ditemukan
             allBinsForThisPart.forEach(binKeyName => {
                 let foundSysItem = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyName);
                 let sysAwal = foundSysItem ? (parseInt(foundSysItem['Stok Sistem Awal']) || 0) : 0;
@@ -1667,7 +1728,6 @@
 
             document.getElementById('modal-table-lokasi').innerHTML = lokasiHtml;
 
-            // Delivery Gantung khusus bin yang diklik
             let filteredGantungModal = gList.filter(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
             if (filteredGantungModal.length === 0) {
                 gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini.</td></tr>`;
@@ -1684,7 +1744,6 @@
             }
             document.getElementById('modal-table-gantung').innerHTML = gantungHtml;
 
-            // Riwayat Masuk khusus bin yang diklik
             let filteredMasuk = inList.filter(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin));
             if (filteredMasuk.length === 0) {
                 masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini.</td></tr>`;
@@ -1701,7 +1760,6 @@
             }
             document.getElementById('modal-table-masuk').innerHTML = masukHtml;
 
-            // Riwayat Keluar khusus bin yang diklik
             let filteredKeluar = outList.filter(k => normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin));
             if (filteredKeluar.length === 0) {
                 keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini.</td></tr>`;
@@ -1843,6 +1901,7 @@
             renderAll();
         }
 
+        // FUNGSI RENDER SEMUA TAB DENGAN FILTER MENYELURUH DI MEMORI DAN PEMOTONGAN PAGINATION MAX 50 BARIS
         function renderAll() {
             let sList = getWhData(sistemData);
             let mList = getWhData(masterData);
@@ -1872,7 +1931,7 @@
             let setPartGantung = getSetPartGantung();
             let filterTgl = document.getElementById('filter-dashboard-tgl').value;
 
-            // 1. RENDER TAB REKAPAN
+            // --- 1. RENDER TAB REKAPAN ---
             let totalItemCount = 0;
             let sesuaiCount = 0;
             let lebihCount = 0;
@@ -1898,7 +1957,7 @@
             });
 
             let searchRekapan = (document.getElementById('search-rekapan')?.value || '').toLowerCase();
-            let rekapanHtml = '';
+            let filteredRekapanRows = [];
 
             masterListToProcess.forEach(item => {
                 let pn = item['Part Number'];
@@ -1929,35 +1988,39 @@
                 let rowText = `${pn} ${nama} ${bin} ${statusKet}`.toLowerCase();
                 if (searchRekapan && !rowText.includes(searchRekapan)) return;
 
-                let badgeClass = 'bg-secondary';
-                if (statusKode === 'sesuai') badgeClass = 'bg-success bg-opacity-10 text-success';
-                else if (statusKode === 'lebih') badgeClass = 'bg-info bg-opacity-10 text-dark';
-                else if (statusKode === 'kurang') badgeClass = 'bg-danger bg-opacity-10 text-danger';
-                else if (statusKode === 'belum') badgeClass = 'bg-warning bg-opacity-10 text-dark';
-
-                rekapanHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
-                    <td class="ps-4 fw-bold">${currentWarehouse}</td>
-                    <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link">${pn}</span></td>
-                    <td>${nama}</td>
-                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1">${statusKet}</span></td>
-                </tr>`;
+                filteredRekapanRows.push({ pn, nama, bin, statusKet, statusKode });
             });
-
-            if (!rekapanHtml) {
-                rekapanHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data yang cocok dengan filter atau pencarian.</td></tr>`;
-            }
 
             document.getElementById('rekap-total-item').innerText = totalItemCount;
             document.getElementById('rekap-sesuai').innerText = sesuaiCount;
             document.getElementById('rekap-lebih').innerText = lebihCount;
             document.getElementById('rekap-kurang').innerText = kurangCount;
             document.getElementById('rekap-belum').innerText = belumCount;
-            document.getElementById('table-ringkasan-rekapan').innerHTML = rekapanHtml;
 
-            // 2. RENDER TAB STOK SISTEM
+            let paginatedRekapan = filteredRekapanRows.slice((currentPages.rekapan - 1) * pageSize, currentPages.rekapan * pageSize);
+            let rekapanHtml = '';
+            paginatedRekapan.forEach(r => {
+                let badgeClass = 'bg-secondary';
+                if (r.statusKode === 'sesuai') badgeClass = 'bg-success bg-opacity-10 text-success';
+                else if (r.statusKode === 'lebih') badgeClass = 'bg-info bg-opacity-10 text-dark';
+                else if (r.statusKode === 'kurang') badgeClass = 'bg-danger bg-opacity-10 text-danger';
+                else if (r.statusKode === 'belum') badgeClass = 'bg-warning bg-opacity-10 text-dark';
+
+                rekapanHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(r.pn)}', '${safeBin(r.bin)}', event)">
+                    <td class="ps-4 fw-bold">${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1">${r.bin}</span></td>
+                    <td><span class="part-number-link">${r.pn}</span></td>
+                    <td>${r.nama}</td>
+                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1">${r.statusKet}</span></td>
+                </tr>`;
+            });
+            if (!rekapanHtml) rekapanHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data yang cocok dengan filter atau pencarian.</td></tr>`;
+            document.getElementById('table-ringkasan-rekapan').innerHTML = rekapanHtml;
+            renderPagination('rekapan', filteredRekapanRows.length);
+
+            // --- 2. RENDER TAB STOK SISTEM ---
             let searchSistem = (document.getElementById('search-sistem')?.value || '').toLowerCase();
-            let sistemHtml = '';
+            let filteredSistemRows = [];
             let selectHapusBarangHtml = '';
 
             sList.forEach(s => {
@@ -1969,7 +2032,15 @@
                 selectHapusBarangHtml += `<option value="${pn}||${bin}">${pn} - ${nama} (Bin: ${bin})</option>`;
 
                 if (searchSistem && !rowText.includes(searchSistem)) return;
+                filteredSistemRows.push(s);
+            });
 
+            let paginatedSistem = filteredSistemRows.slice((currentPages.sistem - 1) * pageSize, currentPages.sistem * pageSize);
+            let sistemHtml = '';
+            paginatedSistem.forEach(s => {
+                let pn = s['Part Number'];
+                let nama = s['Nama Barang'];
+                let bin = s['Bin'] || '-';
                 sistemHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
                     <td class="ps-4 fw-bold">${currentWarehouse}</td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
@@ -1978,19 +2049,20 @@
                     <td class="pe-4 fw-bold">${s['Stok Sistem Awal']}</td>
                 </tr>`;
             });
-
             if (!sistemHtml) sistemHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Belum ada data stok sistem.</td></tr>`;
             document.getElementById('table-sistem').innerHTML = sistemHtml;
+            renderPagination('sistem', filteredSistemRows.length);
+
             let selectHapusEl = document.getElementById('select-hapus-barang');
             if (selectHapusEl) selectHapusEl.innerHTML = selectHapusBarangHtml || '<option value="">Tidak ada barang</option>';
 
-            // 3. RENDER TAB STOK FISIK
+            // --- 3. RENDER TAB STOK FISIK ---
             let startFisik = document.getElementById('filter-fisik-start')?.value || '';
             let endFisik = document.getElementById('filter-fisik-end')?.value || '';
             let searchFisik = (document.getElementById('search-fisik')?.value || '').toLowerCase();
-            let fisikHtml = '';
+            let filteredFisikRows = [];
 
-            mList.forEach((item, idx) => {
+            mList.forEach((item, originalIdx) => {
                 let tgl = parseExcelDate(item['Tanggal STO']);
                 if (startFisik && tgl && tgl < startFisik) return;
                 if (endFisik && tgl && tgl > endFisik) return;
@@ -1999,6 +2071,17 @@
                 let bin = item['Bin'] || '-';
                 let rowText = `${pn} ${item['Nama Barang']} ${bin} ${item['Tanggal STO']}`.toLowerCase();
                 if (searchFisik && !rowText.includes(searchFisik)) return;
+
+                filteredFisikRows.push({ item, originalIdx });
+            });
+
+            let paginatedFisik = filteredFisikRows.slice((currentPages.fisik - 1) * pageSize, currentPages.fisik * pageSize);
+            let fisikHtml = '';
+            paginatedFisik.forEach(obj => {
+                let item = obj.item;
+                let idx = obj.originalIdx;
+                let pn = item['Part Number'];
+                let bin = item['Bin'] || '-';
 
                 let key = buildStokKey(pn, bin);
                 let sysAwal = mapSistemAwal[key] || 0;
@@ -2026,15 +2109,15 @@
                     </td>
                 </tr>`;
             });
-
             if (!fisikHtml) fisikHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data stok fisik (opname).</td></tr>`;
             document.getElementById('table-fisik').innerHTML = fisikHtml;
+            renderPagination('fisik', filteredFisikRows.length);
 
-            // 4. RENDER TAB STOK MASUK
+            // --- 4. RENDER TAB STOK MASUK ---
             let startMasuk = document.getElementById('filter-masuk-start')?.value || '';
             let endMasuk = document.getElementById('filter-masuk-end')?.value || '';
             let searchMasuk = (document.getElementById('search-masuk')?.value || '').toLowerCase();
-            let masukHtml = '';
+            let filteredMasukRows = [];
 
             inList.forEach(m => {
                 let tgl = parseExcelDate(m.Tanggal);
@@ -2046,6 +2129,15 @@
                 let rowText = `${pn} ${m['Nama Barang']} ${bin} ${m['User Wadig']} ${m['Nama User']}`.toLowerCase();
                 if (searchMasuk && !rowText.includes(searchMasuk)) return;
 
+                filteredMasukRows.push(m);
+            });
+
+            let paginatedMasuk = filteredMasukRows.slice((currentPages.masuk - 1) * pageSize, currentPages.masuk * pageSize);
+            let masukHtml = '';
+            paginatedMasuk.forEach(m => {
+                let tgl = parseExcelDate(m.Tanggal);
+                let pn = m['Part Number'];
+                let bin = m['Bin'] || '-';
                 masukHtml += `<tr>
                     <td class="ps-4">${tgl || '-'}</td>
                     <td class="fw-bold">${currentWarehouse}</td>
@@ -2057,15 +2149,15 @@
                     <td class="pe-4 text-success fw-bold">+${m['Jumlah Masuk']}</td>
                 </tr>`;
             });
-
             if (!masukHtml) masukHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada riwayat stok masuk.</td></tr>`;
             document.getElementById('table-masuk').innerHTML = masukHtml;
+            renderPagination('masuk', filteredMasukRows.length);
 
-            // 5. RENDER TAB STOK KELUAR
+            // --- 5. RENDER TAB STOK KELUAR ---
             let startKeluar = document.getElementById('filter-keluar-start')?.value || '';
             let endKeluar = document.getElementById('filter-keluar-end')?.value || '';
             let searchKeluar = (document.getElementById('search-keluar')?.value || '').toLowerCase();
-            let keluarHtml = '';
+            let filteredKeluarRows = [];
 
             outList.forEach(k => {
                 let tgl = parseExcelDate(k.Tanggal);
@@ -2077,6 +2169,15 @@
                 let rowText = `${pn} ${k['Nama Barang']} ${bin} ${k['No. Delivery']} ${k['User Wadig']} ${k['Nama User']}`.toLowerCase();
                 if (searchKeluar && !rowText.includes(searchKeluar)) return;
 
+                filteredKeluarRows.push(k);
+            });
+
+            let paginatedKeluar = filteredKeluarRows.slice((currentPages.keluar - 1) * pageSize, currentPages.keluar * pageSize);
+            let keluarHtml = '';
+            paginatedKeluar.forEach(k => {
+                let tgl = parseExcelDate(k.Tanggal);
+                let pn = k['Part Number'];
+                let bin = k['Bin'] || '-';
                 keluarHtml += `<tr>
                     <td class="ps-4">${tgl || '-'}</td>
                     <td><code class="text-primary">${k['No. Delivery'] || '-'}</code></td>
@@ -2089,13 +2190,13 @@
                     <td class="pe-4 text-danger fw-bold">-${k['Jumlah Keluar']}</td>
                 </tr>`;
             });
-
             if (!keluarHtml) keluarHtml = `<tr><td colspan="9" class="text-center text-muted py-4">Tidak ada riwayat stok keluar.</td></tr>`;
             document.getElementById('table-keluar').innerHTML = keluarHtml;
+            renderPagination('keluar', filteredKeluarRows.length);
 
-            // 6. RENDER TAB DELIVERY GANTUNG
+            // --- 6. RENDER TAB DELIVERY GANTUNG ---
             let searchGantung = (document.getElementById('search-gantung')?.value || '').toLowerCase();
-            let gantungHtml = '';
+            let filteredGantungRows = [];
 
             gList.forEach(g => {
                 let pn = g['Part Number'];
@@ -2104,6 +2205,15 @@
                 let rowText = `${g['No. Delivery']} ${pn} ${g['Material Deskripsi']} ${bin} ${g['No. Kartu']} ${tglGantung}`.toLowerCase();
                 if (searchGantung && !rowText.includes(searchGantung)) return;
 
+                filteredGantungRows.push(g);
+            });
+
+            let paginatedGantung = filteredGantungRows.slice((currentPages.gantung - 1) * pageSize, currentPages.gantung * pageSize);
+            let gantungHtml = '';
+            paginatedGantung.forEach(g => {
+                let pn = g['Part Number'];
+                let bin = g['Bin'] || '-';
+                let tglGantung = parseExcelDate(g['Tanggal']) || '-';
                 gantungHtml += `<tr>
                     <td class="ps-4"><code class="text-primary">${g['No. Delivery']}</code> <small class="text-muted d-block">(${tglGantung})</small></td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
@@ -2112,15 +2222,14 @@
                     <td class="pe-4"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
                 </tr>`;
             });
-
             if (!gantungHtml) gantungHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada delivery gantung di gudang ini.</td></tr>`;
             document.getElementById('table-delivery-gantung').innerHTML = gantungHtml;
+            renderPagination('gantung', filteredGantungRows.length);
 
-            // 7. RENDER TAB SELISIH
+            // --- 7. RENDER TAB SELISIH ---
             let selisihStart = document.getElementById('filter-selisih-start')?.value || '';
             let selisihEnd = document.getElementById('filter-selisih-end')?.value || '';
             let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
-            let selisihHtml = '';
 
             let filteredMasukForSelisih = inList.filter(m => {
                 let tgl = parseExcelDate(m.Tanggal);
@@ -2150,7 +2259,23 @@
                 mapKeluarSelisih[key] = (mapKeluarSelisih[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
-            masterListToProcess.forEach(item => {
+            let masterSelisihList = [];
+            let processedSelisihKeys = new Set();
+            sList.forEach(s => {
+                let key = buildStokKey(s['Part Number'], s['Bin']);
+                processedSelisihKeys.add(key);
+                masterSelisihList.push({ 'Part Number': s['Part Number'], 'Nama Barang': s['Nama Barang'], 'Bin': s['Bin'] });
+            });
+            mList.forEach(f => {
+                let key = buildStokKey(f['Part Number'], f['Bin']);
+                if (!processedSelisihKeys.has(key)) {
+                    processedSelisihKeys.add(key);
+                    masterSelisihList.push({ 'Part Number': f['Part Number'], 'Nama Barang': f['Nama Barang'], 'Bin': f['Bin'] });
+                }
+            });
+
+            let filteredSelisihRows = [];
+            masterSelisihList.forEach(item => {
                 let pn = item['Part Number'];
                 let nama = item['Nama Barang'];
                 let bin = item['Bin'] || '-';
@@ -2173,37 +2298,45 @@
                 let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
                 let selisih = hitung.selisih === null ? stokSistemAkhir : hitung.selisih;
-                let statusKet = hitung.statusKeterangan;
-                let fisikDisplay = fisikAwal === null ? `<span class="text-muted fst-italic">Belum Di-STO</span>` : fisikAwal;
+                let statusKeterangan = hitung.statusKeterangan;
 
                 let rowText = `${pn} ${nama} ${bin}`.toLowerCase();
                 if (searchSelisih && !rowText.includes(searchSelisih)) return;
 
+                filteredSelisihRows.push({
+                    pn, nama, bin, stokSistemAwal, totalMasuk, totalKeluar, stokSistemAkhir, fisikAwal, tglFisik, selisih, statusKeterangan
+                });
+            });
+
+            let paginatedSelisih = filteredSelisihRows.slice((currentPages.selisih - 1) * pageSize, currentPages.selisih * pageSize);
+            let selisihHtml = '';
+            paginatedSelisih.forEach(row => {
+                let fisikDisplay = row.fisikAwal === null ? `<span class="badge bg-warning bg-opacity-10 text-dark">Belum Di-STO</span>` : `${row.fisikAwal} <small class="text-muted">(${row.tglFisik})</small>`;
                 let badgeClass = 'bg-secondary';
-                if (hitung.statusKategoriCode === 'sesuai') badgeClass = 'bg-success bg-opacity-10 text-success';
-                else if (hitung.statusKategoriCode === 'lebih') badgeClass = 'bg-info bg-opacity-10 text-dark';
-                else if (hitung.statusKategoriCode === 'kurang') badgeClass = 'bg-danger bg-opacity-10 text-danger';
+                if (row.statusKeterangan.includes('Sesuai')) badgeClass = 'bg-success bg-opacity-10 text-success';
+                else if (row.statusKeterangan.includes('Lebih')) badgeClass = 'bg-info bg-opacity-10 text-dark';
+                else if (row.statusKeterangan.includes('Kurang')) badgeClass = 'bg-danger bg-opacity-10 text-danger';
 
                 selisihHtml += `<tr>
                     <td class="ps-4 fw-bold">${currentWarehouse}</td>
-                    <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
-                    <td>${nama}</td>
-                    <td>${stokSistemAwal}</td>
-                    <td class="text-success">+${totalMasuk}</td>
-                    <td class="text-danger">-${totalKeluar}</td>
-                    <td class="fw-bold">${stokSistemAkhir}</td>
-                    <td class="fw-bold">${fisikDisplay}</td>
-                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1">${statusKet}</span> <small class="text-muted d-block">STO: ${tglFisik}</small></td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1">${row.bin}</span></td>
+                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(row.pn)}', '${safeBin(row.bin)}', event)">${row.pn}</span></td>
+                    <td>${row.nama}</td>
+                    <td>${row.stokSistemAwal}</td>
+                    <td class="text-success fw-bold">+${row.totalMasuk}</td>
+                    <td class="text-danger fw-bold">-${row.totalKeluar}</td>
+                    <td class="fw-bold">${row.stokSistemAkhir}</td>
+                    <td>${fisikDisplay}</td>
+                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1">${row.statusKeterangan}</span></td>
                 </tr>`;
             });
-
-            if (!selisihHtml) selisihHtml = `<tr><td colspan="10" class="text-center text-muted py-4">Tidak ada data kontrol selisih.</td></tr>`;
+            if (!selisihHtml) selisihHtml = `<tr><td colspan="10" class="text-center text-muted py-4">Tidak ada data selisih.</td></tr>`;
             document.getElementById('table-selisih').innerHTML = selisihHtml;
+            renderPagination('selisih', filteredSelisihRows.length);
         }
 
         // Jalankan render awal saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             renderAll();
         });
     </script>
