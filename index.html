@@ -638,7 +638,7 @@
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
                 <div class="modal-header bg-primary text-white" style="border-top-left-radius: 14px; border-top-right-radius: 14px;">
-                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Detail Part Number: <span id="modal-pn-title" class="text-warning"></span> (Bin: <span id="modal-bin-title" class="text-info"></span>)</h5>
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Detail Part Number: <span id="modal-pn-title" class="text-warning"></span> (Bin yang diklik: <span id="modal-bin-title" class="text-info"></span>)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-light">
@@ -646,10 +646,10 @@
                         <h6 class="fw-bold text-dark mb-1">Nama Barang: <span id="modal-nama-barang" class="fw-normal text-secondary"></span> | Gudang: <span id="modal-wh-title" class="fw-bold text-primary"></span></h6>
                     </div>
 
-                    <!-- TABEL STATUS LOKASI -->
-                    <div class="card mb-4 shadow-sm">
-                        <div class="card-header bg-white fw-bold text-primary py-3">
-                            <i class="fa-solid fa-warehouse me-2"></i>Status & Stok Terbaru
+                    <!-- TABEL STATUS LOKASI (DIPERBARUI: MENAMPILKAN SEMUA LOKASI/BIN LAIN DENGAN PART NUMBER SAMA) -->
+                    <div class="card mb-4 shadow-sm border-primary border-2">
+                        <div class="card-header bg-primary bg-opacity-10 fw-bold text-primary py-3 d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-warehouse me-2"></i>Status & Stok Part Number Ini di Semua Lokasi / Bin (Gudang <span class="active-wh-text">H50</span>)</span>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -684,7 +684,7 @@
                         <div class="col-md-6">
                             <div class="card h-100 shadow-sm">
                                 <div class="card-header bg-white fw-bold text-success py-3">
-                                    <i class="fa-solid fa-arrow-trend-down fa-rotate-180 me-2"></i>Riwayat Stok Masuk
+                                    <i class="fa-solid fa-arrow-trend-down fa-rotate-180 me-2"></i>Riwayat Stok Masuk (Bin Ini)
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
@@ -702,7 +702,7 @@
                         <div class="col-md-6">
                             <div class="card h-100 shadow-sm">
                                 <div class="card-header bg-white fw-bold text-danger py-3">
-                                    <i class="fa-solid fa-arrow-trend-up me-2"></i>Riwayat Stok Keluar
+                                    <i class="fa-solid fa-arrow-trend-up me-2"></i>Riwayat Stok Keluar (Bin Ini)
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
@@ -1602,56 +1602,72 @@
             }
             document.getElementById('modal-nama-barang').innerText = foundNama;
 
-            let sysAwal = 0;
-            let foundS = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === normBin(cleanBin));
-            if (foundS) sysAwal = parseInt(foundS['Stok Sistem Awal']) || 0;
+            // KUMPULKAN SEMUA BIN/LOKASI DI GUDANG AKTIF INI YANG MEMILIKI PART NUMBER YANG SAMA
+            let allBinsForThisPart = new Set();
+            sList.forEach(s => { if (normPN(s['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(s['Bin'])); });
+            mList.forEach(m => { if (normPN(m['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(m['Bin'])); });
+            inList.forEach(i => { if (normPN(i['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(i['Bin'])); });
+            outList.forEach(o => { if (normPN(o['Part Number']) === normPN(cleanPn)) allBinsForThisPart.add(normBin(o['Bin'])); });
+            allBinsForThisPart.add(normBin(cleanBin)); // pastikan bin yang diklik masuk
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let key = buildStokKey(cleanPn, cleanBin);
-            let fisikVal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
-            let tglFisik = mapTanggalFisik[key] || '-';
+            let setPartGantung = getSetPartGantung();
 
-            let hasGantung = gList.some(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
+            // Render baris untuk setiap lokasi/bin yang ditemukan
+            allBinsForThisPart.forEach(binKeyName => {
+                let foundSysItem = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyName);
+                let sysAwal = foundSysItem ? (parseInt(foundSysItem['Stok Sistem Awal']) || 0) : 0;
 
-            let tMasuk = 0;
-            inList.forEach(m => {
-                if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin)) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
+                let mapKey = buildStokKey(cleanPn, binKeyName);
+                let fisikVal = mapFisikAwal[mapKey] !== undefined ? mapFisikAwal[mapKey] : null;
+                let tglFisik = mapTanggalFisik[mapKey] || '-';
+                let hasGantung = setPartGantung.has(mapKey);
+
+                let tMasuk = 0;
+                inList.forEach(m => {
+                    if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyName) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
+                });
+
+                let tKeluar = 0;
+                outList.forEach(k => {
+                    if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
+                });
+
+                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
+                let sysAkhir = hitung.stokSistemAkhir;
+
+                let statusBadge = "";
+                let fisikDisplay = "";
+
+                if (fisikVal === null) {
+                    statusBadge = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum Di-STO</span>`;
+                    fisikDisplay = `<span class="text-muted fst-italic">Belum Opname</span>`;
+                } else {
+                    let selisih = hitung.selisih;
+                    fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
+                    if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
+                    else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
+                    else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
+                }
+
+                let isCurrentClickedBin = (binKeyName === normBin(cleanBin));
+                let rowHighlightStyle = isCurrentClickedBin ? 'style="background-color: #eef2ff !important; font-weight: bold;"' : '';
+
+                lokasiHtml += `<tr ${rowHighlightStyle}>
+                    <td class="ps-3 fw-bold">${currentWarehouse}</td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${binKeyName}</span> ${isCurrentClickedBin ? '<span class="badge bg-primary ms-1" style="font-size:0.65rem">Dipilih</span>' : ''}</td>
+                    <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
+                    <td>${fisikDisplay}</td>
+                    <td>${statusBadge}</td>
+                    <td class="pe-3 text-center">
+                        <button class="btn btn-sm btn-primary py-0 px-2 fw-bold" onclick="editFisikFromModalDetail('${safePN(cleanPn)}', '${safeBin(binKeyName)}')"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Fisik</button>
+                    </td>
+                </tr>`;
             });
 
-            let tKeluar = 0;
-            outList.forEach(k => {
-                if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin)) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
-            });
-
-            let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
-            let sysAkhir = hitung.stokSistemAkhir;
-
-            let statusBadge = "";
-            let fisikDisplay = "";
-
-            if (fisikVal === null) {
-                statusBadge = `<span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Belum Di-STO</span>`;
-                fisikDisplay = `<span class="text-muted fst-italic">Belum Opname</span>`;
-            } else {
-                let selisih = hitung.selisih;
-                fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
-                if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
-                else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
-                else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
-            }
-
-            lokasiHtml = `<tr>
-                <td class="ps-3 fw-bold">${currentWarehouse}</td>
-                <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
-                <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
-                <td>${fisikDisplay}</td>
-                <td>${statusBadge}</td>
-                <td class="pe-3 text-center">
-                    <button class="btn btn-sm btn-primary py-0 px-2 fw-bold" onclick="editFisikFromModalDetail('${safePN(cleanPn)}', '${safeBin(cleanBin)}')"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Fisik</button>
-                </td>
-            </tr>`;
             document.getElementById('modal-table-lokasi').innerHTML = lokasiHtml;
 
+            // Delivery Gantung khusus bin yang diklik
             let filteredGantungModal = gList.filter(g => normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === normBin(cleanBin));
             if (filteredGantungModal.length === 0) {
                 gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini.</td></tr>`;
@@ -1668,6 +1684,7 @@
             }
             document.getElementById('modal-table-gantung').innerHTML = gantungHtml;
 
+            // Riwayat Masuk khusus bin yang diklik
             let filteredMasuk = inList.filter(m => normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === normBin(cleanBin));
             if (filteredMasuk.length === 0) {
                 masukHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada riwayat stok masuk di bin ini.</td></tr>`;
@@ -1684,6 +1701,7 @@
             }
             document.getElementById('modal-table-masuk').innerHTML = masukHtml;
 
+            // Riwayat Keluar khusus bin yang diklik
             let filteredKeluar = outList.filter(k => normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === normBin(cleanBin));
             if (filteredKeluar.length === 0) {
                 keluarHtml = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada riwayat stok keluar di bin ini.</td></tr>`;
