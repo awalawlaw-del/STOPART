@@ -550,6 +550,7 @@
                                             <option value="masuk">Stok Masuk Harian</option>
                                             <option value="keluar">Stok Keluar Harian</option>
                                             <option value="fisik">Stok Fisik (Opname)</option>
+                                            <option value="gantung">Delivery Gantung</option>
                                         </select>
                                     </div>
                                     <div class="row g-2 mb-3">
@@ -1126,7 +1127,7 @@
             XLSX.utils.book_append_sheet(wb, wsKeluar, "Stok_Keluar_Harian");
 
             let wsGantung = XLSX.utils.json_to_sheet([
-                { "Gudang": "H50", "No. Delivery": "DO-9921", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Material Deskripsi": "Kardus Box M", "No. Kartu": "KARTU-01" }
+                { "Gudang": "H50", "Tanggal": "2026-09-02", "No. Delivery": "DO-9921", "Bin": "A-01-01", "Part Number": "PN-BOX-001", "Material Deskripsi": "Kardus Box M", "No. Kartu": "KARTU-01" }
             ]);
             XLSX.utils.book_append_sheet(wb, wsGantung, "Delivery_Gantung");
 
@@ -1171,6 +1172,7 @@
                         let bin = getVal(r, ['Bin', 'Lokasi Bin', 'BinLocation', 'Rak', 'StorageBin']) || '-';
 
                         if (cleanSheetName.includes('gantung') || cleanSheetName.includes('pending')) {
+                            let tglGantung = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl', 'Tanggal STO'])) || '';
                             let doNum = String(getVal(r, ['No. Delivery', 'NoDelivery', 'Delivery', 'No DO', 'DO'])) || '-';
                             let partNum = String(pn) || '-';
                             let desc = String(nama) || '-';
@@ -1178,6 +1180,7 @@
                             
                             if (!gList.some(g => g['No. Delivery'] === doNum && normPN(g['Part Number']) === normPN(partNum) && normBin(g['Bin']) === normBin(bin))) {
                                 gList.push({
+                                    'Tanggal': tglGantung,
                                     'No. Delivery': doNum,
                                     'Bin': bin,
                                     'Part Number': partNum,
@@ -1654,8 +1657,9 @@
                 gantungHtml = `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada delivery gantung di bin ini.</td></tr>`;
             } else {
                 filteredGantungModal.forEach(g => {
+                    let tglGantung = parseExcelDate(g['Tanggal']) || '-';
                     gantungHtml += `<tr>
-                        <td class="ps-3"><code class="text-primary">${g['No. Delivery']}</code></td>
+                        <td class="ps-3"><code class="text-primary">${g['No. Delivery']}</code> <small class="text-muted d-block">(${tglGantung})</small></td>
                         <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${cleanBin}</span></td>
                         <td>${g['Material Deskripsi']}</td>
                         <td class="pe-3"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
@@ -1751,6 +1755,13 @@
                     masterData[currentWarehouse] = mList.filter(f => {
                         let tgl = parseExcelDate(f['Tanggal STO']);
                         if (!tgl) return true;
+                        return !(tgl >= start && tgl <= end);
+                    });
+                } else if(jenis === 'gantung') {
+                    let gList = getWhData(deliveryGantungData);
+                    deliveryGantungData[currentWarehouse] = gList.filter(g => {
+                        let tgl = parseExcelDate(g['Tanggal']);
+                        if (!tgl) return true; // Jika data delivery gantung lama tidak ada tanggalnya, biarkan atau hapus sesuai rentang jika ada tanggal
                         return !(tgl >= start && tgl <= end);
                     });
                 }
@@ -2071,11 +2082,12 @@
             gList.forEach(g => {
                 let pn = g['Part Number'];
                 let bin = g['Bin'] || '-';
-                let rowText = `${g['No. Delivery']} ${pn} ${g['Material Deskripsi']} ${bin} ${g['No. Kartu']}`.toLowerCase();
+                let tglGantung = parseExcelDate(g['Tanggal']) || '-';
+                let rowText = `${g['No. Delivery']} ${pn} ${g['Material Deskripsi']} ${bin} ${g['No. Kartu']} ${tglGantung}`.toLowerCase();
                 if (searchGantung && !rowText.includes(searchGantung)) return;
 
                 gantungHtml += `<tr>
-                    <td class="ps-4"><code class="text-primary">${g['No. Delivery']}</code></td>
+                    <td class="ps-4"><code class="text-primary">${g['No. Delivery']}</code> <small class="text-muted d-block">(${tglGantung})</small></td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
                     <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
                     <td>${g['Material Deskripsi']}</td>
