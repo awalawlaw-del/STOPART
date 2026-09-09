@@ -294,7 +294,7 @@
                                 <button class="btn btn-success btn-sm text-white fw-bold" id="btn-export-filter" onclick="exportFilteredRekapanExcel()" style="display:none;"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Kategori Ini</button>
                                 <button class="btn btn-outline-secondary btn-sm" id="btn-reset-filter" onclick="setStatFilter('semua')" style="display:none;"><i class="fa-solid fa-rotate-left me-1"></i> Reset Filter</button>
                                 <div style="width: 260px;">
-                                    <input type="text" id="search-rekapan" class="form-control form-control-sm" placeholder="🔍 Cari (klik part number untuk detail)..." onkeyup="debounceRender()">
+                                    <input type="text" id="search-rekapan" class="form-control form-control-sm" placeholder="🔍 Cari (klik part number untuk detail)..." onkeyup="renderAll()">
                                 </div>
                             </div>
                         </div>
@@ -323,7 +323,7 @@
                         <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <span class="fw-bold small text-muted"><i class="fa-solid fa-server me-1"></i> Data Master Stok Sistem Gudang Aktif (Klik Part Number untuk detail & history)</span>
                             <div style="width: 280px;">
-                                <input type="text" id="search-sistem" class="form-control form-control-sm" placeholder="🔍 Cari part number..." onkeyup="debounceRender()">
+                                <input type="text" id="search-sistem" class="form-control form-control-sm" placeholder="🔍 Cari part number..." onkeyup="renderAll()">
                             </div>
                         </div>
                     </div>
@@ -361,7 +361,7 @@
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <button class="btn btn-primary btn-sm text-white fw-bold" onclick="openInputFisikModal()"><i class="fa-solid fa-plus me-1"></i> Input / Edit Stok Fisik</button>
                                 <div style="width: 200px;">
-                                    <input type="text" id="search-fisik" class="form-control form-control-sm" placeholder="🔍 Cari..." onkeyup="debounceRender()">
+                                    <input type="text" id="search-fisik" class="form-control form-control-sm" placeholder="🔍 Cari..." onkeyup="renderAll()">
                                 </div>
                             </div>
                         </div>
@@ -393,7 +393,7 @@
                                     <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('masuk')">Reset</button>
                                 </div>
                                 <div class="col-auto" style="width: 260px;">
-                                    <input type="text" id="search-masuk" class="form-control form-control-sm" placeholder="🔍 Cari data masuk..." onkeyup="debounceRender()">
+                                    <input type="text" id="search-masuk" class="form-control form-control-sm" placeholder="🔍 Cari data masuk..." onkeyup="renderAll()">
                                 </div>
                             </div>
                         </div>
@@ -425,7 +425,7 @@
                                     <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter('keluar')">Reset</button>
                                 </div>
                                 <div class="col-auto" style="width: 260px;">
-                                    <input type="text" id="search-keluar" class="form-control form-control-sm" placeholder="🔍 Cari data keluar..." onkeyup="debounceRender()">
+                                    <input type="text" id="search-keluar" class="form-control form-control-sm" placeholder="🔍 Cari data keluar..." onkeyup="renderAll()">
                                 </div>
                             </div>
                         </div>
@@ -450,7 +450,7 @@
                         <div class="card-body bg-light rounded-3 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <span class="fw-bold small text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i> Daftar Delivery Gantung Gudang Aktif</span>
                             <div style="width: 280px;">
-                                <input type="text" id="search-gantung" class="form-control form-control-sm" placeholder="🔍 Cari no delivery..." onkeyup="debounceRender()">
+                                <input type="text" id="search-gantung" class="form-control form-control-sm" placeholder="🔍 Cari no delivery..." onkeyup="renderAll()">
                             </div>
                         </div>
                     </div>
@@ -488,7 +488,7 @@
                                 </div>
                                 <div class="col-auto d-flex gap-2">
                                     <div style="width: 220px;">
-                                        <input type="text" id="search-selisih" class="form-control form-control-sm" placeholder="🔍 Cari selisih..." onkeyup="debounceRender()">
+                                        <input type="text" id="search-selisih" class="form-control form-control-sm" placeholder="🔍 Cari selisih..." onkeyup="renderAll()">
                                     </div>
                                     <button class="btn btn-success btn-sm text-white fw-bold" onclick="exportSelisihExcel()"><i class="fa-solid fa-file-excel me-1"></i> Ekspor Selisih</button>
                                 </div>
@@ -731,15 +731,6 @@
 
     <!-- Script Logika -->
     <script>
-        // Fungsi Debounce agar pengetikan pencarian tidak lag
-        let searchTimeout;
-        function debounceRender() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                renderAll();
-            }, 300);
-        }
-
         const userWadigMapping = {
             "ASTMUHZU0204": "OJI",
             "AWALAW080474": "ALIP 2",
@@ -1848,13 +1839,6 @@
             });
 
             let mapKeluar = {};
-            outList.forEach(k => {
-                let key = buildStokKey(k['Part Number'], k['Bin']);
-                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(m['Jumlah Keluar']) || 0); // Diperbaiki dari k['Jumlah Keluar'] sesuai kode asli jika perlu, tapi biarkan standard k['Jumlah Keluar']
-            });
-
-            // Memperbaiki mapKeluar di renderAll (karena template asli pakai k['Jumlah Keluar'])
-            mapKeluar = {};
             outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
