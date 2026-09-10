@@ -798,9 +798,8 @@
         
         let currentStatFilter = 'semua';
 
-        // Debounce search function integration
         function handleSearchInput(tabKey) {
-            currentPages[tabKey] = 1; // Reset ke halaman 1 saat mengetik pencarian
+            currentPages[tabKey] = 1;
             if (searchTimeouts[tabKey]) clearTimeout(searchTimeouts[tabKey]);
             searchTimeouts[tabKey] = setTimeout(() => {
                 renderAll();
@@ -959,6 +958,14 @@
                     exists['Nama Barang'] = cleanNama;
                 }
             }
+        }
+
+        // Fungsi otomatis menghapus data dari delivery gantung jika No. Delivery masuk ke Stok Keluar
+        function cleanDeliveryGantungByDO(doNumber, whTarget) {
+            let doClean = String(doNumber || '').trim();
+            if (!doClean || doClean === '-' || doClean === 'undefined') return;
+            let gList = getWhData(deliveryGantungData, whTarget);
+            deliveryGantungData[whTarget] = gList.filter(g => String(g['No. Delivery'] || '').trim().toLowerCase() !== doClean.toLowerCase());
         }
 
         function setStatFilter(filterType) {
@@ -1240,7 +1247,9 @@
                             let desc = String(nama) || '-';
                             let kartu = String(getVal(r, ['No. Kartu', 'NoKartu', 'Kartu', 'Card'])) || '-';
                             
-                            if (!gList.some(g => g['No. Delivery'] === doNum && normPN(g['Part Number']) === normPN(partNum) && normBin(g['Bin']) === normBin(bin))) {
+                            // Hanya masukkan ke gantung jika DO tersebut belum ada di stok keluar
+                            let isAlreadyOut = outList.some(o => String(o['No. Delivery'] || '').trim().toLowerCase() === doNum.toLowerCase());
+                            if (!isAlreadyOut && !gList.some(g => String(g['No. Delivery'] || '').trim().toLowerCase() === doNum.toLowerCase() && normPN(g['Part Number']) === normPN(partNum) && normBin(g['Bin']) === normBin(bin))) {
                                 gList.push({
                                     'Tanggal': tglGantung,
                                     'No. Delivery': doNum,
@@ -1308,7 +1317,7 @@
                             let rawNama = getVal(r, ['Nama User', 'NamaUser', 'Nama']);
                             let resolved = resolveUserNama(rawWadig, rawNama);
                             let tglKeluar = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl']));
-                            let kDo = getVal(r, ['No. Delivery', 'NoDelivery', 'Delivery', 'No DO', 'DO']) || '-';
+                            let kDo = String(getVal(r, ['No. Delivery', 'NoDelivery', 'Delivery', 'No DO', 'DO']) || '-').trim();
                             let qtyKeluar = Number(getVal(r, ['Jumlah Keluar', 'JumlahKeluar', 'Qty Keluar', 'Keluar', 'Qty', 'Jumlah'])) || 0;
 
                             outList.push({
@@ -1321,6 +1330,9 @@
                                 'Nama User': resolved.nama,
                                 'Jumlah Keluar': qtyKeluar
                             });
+
+                            // Otomatis hapus dari delivery gantung jika DO ini ada
+                            cleanDeliveryGantungByDO(kDo, targetWh);
                         }
                         else {
                             let sysAwal = Number(getVal(r, ['Stok Sistem Awal', 'StokSistemAwal', 'Stok Sistem', 'Stok Awal', 'Sistem', 'Stok'])) || 0;
@@ -1691,6 +1703,12 @@
 
                 let tKeluar = 0;
                 outList.forEach(k => {
+                    if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) tKeluar += parseInt(m['Jumlah Keluar']) || (parseInt(k['Jumlah Keluar']) || 0); // Diperbaiki perhitungan tKeluar
+                });
+
+                // Kalkulasi bener untuk tKeluar di loop modal
+                tKeluar = 0;
+                outList.forEach(k => {
                     if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
                 });
 
@@ -1834,10 +1852,11 @@
                         return !(tgl >= start && tgl <= end);
                     });
                 } else if(jenis === 'gantung') {
+                    // PERBAIKAN: Jika tanggal kosong ATAU berada dalam rentang, data akan ikut terhapus bersih
                     let gList = getWhData(deliveryGantungData);
                     deliveryGantungData[currentWarehouse] = gList.filter(g => {
                         let tgl = parseExcelDate(g['Tanggal']);
-                        if (!tgl) return true;
+                        if (!tgl) return false; 
                         return !(tgl >= start && tgl <= end);
                     });
                 }
@@ -1901,7 +1920,7 @@
             renderAll();
         }
 
-        // FUNGSI RENDER SEMUA TAB DENGAN FILTER MENYELURUH DI MEMORI DAN PEMOTONGAN PAGINATION MAX 50 BARIS
+        // RENDER SEMUA TAB DENGAN FILTER MENYELURUH DI MEMORI DAN PEMOTONGAN PAGINATION MAX 50 BARIS
         function renderAll() {
             let sList = getWhData(sistemData);
             let mList = getWhData(masterData);
