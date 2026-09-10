@@ -881,11 +881,28 @@
             return normPN(pn) + '||' + normBin(bin);
         }
 
-        function getSetPartGantung() {
-            let s = new Set();
+        // Pengecekan status gantung BERBASIS NOMOR DO (bukan part number secara global)
+        function getMapDOStatusGantung() {
             let gList = getWhData(deliveryGantungData);
-            gList.forEach(g => s.add(buildStokKey(g['Part Number'], g['Bin'])));
-            return s;
+            let outList = getWhData(keluarData);
+            
+            let outDoSet = new Set();
+            outList.forEach(o => {
+                let doNum = String(o['No. Delivery'] || '').trim().toLowerCase();
+                if (doNum && doNum !== '-' && doNum !== 'undefined') {
+                    outDoSet.add(doNum);
+                }
+            });
+
+            // Himpunan DO gantung yang benar-benar belum masuk ke data keluar
+            let gantungDoSet = new Set();
+            gList.forEach(g => {
+                let gDoNum = String(g['No. Delivery'] || '').trim().toLowerCase();
+                if (gDoNum && !outDoSet.has(gDoNum)) {
+                    gantungDoSet.add(gDoNum);
+                }
+            });
+            return gantungDoSet;
         }
 
         function getMapFisikTerbaru() {
@@ -908,10 +925,10 @@
         }
 
         function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung) {
-            let effectiveKeluar = hasGantung ? 0 : totalKeluar;
-            let stokSistemAkhir = stokSistemAwal + totalMasuk - effectiveKeluar;
+            // Stok Sistem Akhir murni dikurangi totalKeluar yang sah dari transaksi keluar
+            let stokSistemAkhir = stokSistemAwal + totalMasuk - totalKeluar;
             let result = {
-                stokSistemAwal, totalMasuk, totalKeluar, effectiveKeluar,
+                stokSistemAwal, totalMasuk, totalKeluar, effectiveKeluar: totalKeluar,
                 hasGantung, stokSistemAkhir,
                 fisikAkhir: null,
                 selisih: null, statusKategoriCode: '', statusKeterangan: ''
@@ -1395,8 +1412,8 @@
             });
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let setPartGantung = getSetPartGantung();
             let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+            let gantungDoSet = getMapDOStatusGantung();
 
             let masterListToProcess = [];
             let processedKeys = new Set();
@@ -1427,7 +1444,15 @@
                 let tglFisik = mapTanggalFisik[key] || '-';
                 let totalMasuk = mapMasuk[key] || 0;
                 let totalKeluar = mapKeluar[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                let gList = getWhData(deliveryGantungData);
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
@@ -1482,7 +1507,7 @@
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
-            let setPartGantung = getSetPartGantung();
+            let gantungDoSet = getMapDOStatusGantung();
 
             let exportRows = [];
             mList.forEach(item => {
@@ -1496,7 +1521,15 @@
                 let sysAwal = mapSistemAwal[key] || 0;
                 let tMasuk = mapMasuk[key] || 0;
                 let tKeluar = mapKeluar[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                let gList = getWhData(deliveryGantungData);
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung);
 
@@ -1568,7 +1601,7 @@
             });
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let setPartGantung = getSetPartGantung();
+            let gantungDoSet = getMapDOStatusGantung();
 
             let exportRows = [];
             let masterListToProcess = [];
@@ -1606,7 +1639,15 @@
                 let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
                 let totalMasuk = mapMasuk[key] || 0;
                 let totalKeluar = mapKeluar[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                let gList = getWhData(deliveryGantungData);
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
@@ -1644,7 +1685,6 @@
             XLSX.writeFile(wb, `Laporan_Kontrol_Selisih_${currentWarehouse}.xlsx`);
         }
 
-        // FUNGSI MODAL DETAIL YANG SUDAH DIOPTIMALKAN AGAR TIDAK ADA PART NUMBER YANG GAGAL MUNCUL
         function showPartDetailModal(partNumber, binLocation, event) {
             if (event) event.stopPropagation();
 
@@ -1674,7 +1714,7 @@
                 if (matchFisik) foundNama = matchFisik['Nama Barang'];
                 else {
                     let matchAny = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn)) || mList.find(f => normPN(f['Part Number']) === normPN(cleanPn));
-                    if (matchAny) foundNama = matchAny['Nama Barang'] || cleanPN;
+                    if (matchAny) foundNama = matchAny['Nama Barang'] || cleanPn;
                 }
             }
             document.getElementById('modal-nama-barang').innerText = foundNama;
@@ -1687,7 +1727,7 @@
             allBinsForThisPart.add(normBin(cleanBin));
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let setPartGantung = getSetPartGantung();
+            let gantungDoSet = getMapDOStatusGantung();
 
             allBinsForThisPart.forEach(binKeyName => {
                 let foundSysItem = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyName);
@@ -1696,7 +1736,14 @@
                 let mapKey = buildStokKey(cleanPn, binKeyName);
                 let fisikVal = mapFisikAwal[mapKey] !== undefined ? mapFisikAwal[mapKey] : null;
                 let tglFisik = mapTanggalFisik[mapKey] || '-';
-                let hasGantung = setPartGantung.has(mapKey);
+                
+                let hasGantung = false;
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(cleanPn) && normBin(g['Bin']) === binKeyName) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let tMasuk = 0;
                 inList.forEach(m => {
@@ -1731,7 +1778,7 @@
                 lokasiHtml += `<tr ${rowHighlightStyle}>
                     <td class="ps-3 fw-bold">${currentWarehouse}</td>
                     <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${binKeyName}</span> ${isCurrentClickedBin ? '<span class="badge bg-primary ms-1" style="font-size:0.65rem">Dipilih</span>' : ''}</td>
-                    <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Delivery Gantung)</span>' : ''})</td>
+                    <td>${sysAkhir} (Awal: ${sysAwal}, Masuk: +${tMasuk}, Keluar: -${tKeluar} ${hasGantung ? '<span class="text-info fw-bold">(Ada Delivery Gantung)</span>' : ''})</td>
                     <td>${fisikDisplay}</td>
                     <td>${statusBadge}</td>
                     <td class="pe-3 text-center">
@@ -1941,8 +1988,8 @@
             });
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let setPartGantung = getSetPartGantung();
             let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+            let gantungDoSet = getMapDOStatusGantung();
 
             // --- 1. RENDER TAB REKAPAN ---
             let totalItemCount = 0;
@@ -1984,7 +2031,14 @@
                 let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
                 let totalMasuk = mapMasuk[key] || 0;
                 let totalKeluar = mapKeluar[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
                 let statusKode = hitung.statusKategoriCode;
@@ -2100,7 +2154,14 @@
                 let sysAwal = mapSistemAwal[key] || 0;
                 let tMasuk = mapMasuk[key] || 0;
                 let tKeluar = mapKeluar[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung);
                 let badgeClass = 'bg-secondary';
@@ -2306,7 +2367,14 @@
                 let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
                 let totalMasuk = mapMasukSelisih[key] || 0;
                 let totalKeluar = mapKeluarSelisih[key] || 0;
-                let hasGantung = setPartGantung.has(buildStokKey(pn, bin));
+                
+                let hasGantung = false;
+                gList.forEach(g => {
+                    if (normPN(g['Part Number']) === normPN(pn) && normBin(g['Bin']) === normBin(bin)) {
+                        let gDo = String(g['No. Delivery'] || '').trim().toLowerCase();
+                        if (gantungDoSet.has(gDo)) hasGantung = true;
+                    }
+                });
 
                 let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
