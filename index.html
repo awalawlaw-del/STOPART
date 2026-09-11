@@ -1226,7 +1226,8 @@
                 }
             }
 
-            checkAndAutoRegisterSistem(pn, nama, bin);
+            // PERBAIKAN: Input fisik manual TIDAK LAGI memanggil checkAndAutoRegisterSistem() agar tidak otomatis masuk ke master stok sistem
+
             saveDataToStorage();
             renderAll();
 
@@ -1349,7 +1350,7 @@
                                     'Stok Fisik Awal': fisikQty
                                 });
                             }
-                            checkAndAutoRegisterSistem(pn, nama, bin, targetWh);
+                            // PERBAIKAN: Upload stok fisik TIDAK LAGI memanggil checkAndAutoRegisterSistem()
                         }
                         else if (cleanSheetName.includes('sistem') || cleanSheetName.includes('master')) {
                             let sysAwal = Number(getVal(r, ['Stok Sistem Awal', 'StokSistemAwal', 'Stok Sistem', 'Stok Awal', 'Sistem', 'Stok'])) || 0;
@@ -1373,6 +1374,7 @@
                             let tglMasuk = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl']));
                             let qtyMasuk = Number(getVal(r, ['Jumlah Masuk', 'JumlahMasuk', 'Qty Masuk', 'Masuk', 'Qty', 'Jumlah'])) || 0;
 
+                            // HANYA UNTUK STO/BARANG MASUK: Auto register sistem tetap aktif
                             checkAndAutoRegisterSistem(pn, nama, bin, targetWh);
                             inList.push({
                                 Tanggal: tglMasuk,
