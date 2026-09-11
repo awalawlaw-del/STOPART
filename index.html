@@ -188,10 +188,6 @@
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="#" onclick="switchTab('selisih', event)"><i class="fa-solid fa-triangle-exclamation me-2"></i> Laporan Selisih</a>
                     </li>
-                    <!-- MENU BARU: BARANG TEMUAN -->
-                    <li class="nav-item">
-                        <a class="nav-link text-success fw-bold" href="#" onclick="switchTab('barang-temuan', event)"><i class="fa-solid fa-magnifying-glass-location me-2"></i> Barang Temuan</a>
-                    </li>
                     <li class="nav-item mt-3">
                         <a class="nav-link text-danger bg-danger bg-opacity-10" href="#" onclick="switchTab('hapus-data', event)"><i class="fa-solid fa-trash-can me-2"></i> Kelola / Hapus Data</a>
                     </li>
@@ -229,7 +225,7 @@
                         </div>
                     </div>
 
-                    <!-- 5 KARTU STATISTIK -->
+                    <!-- KARTU STATISTIK (DITAMBAH BARANG TEMUAN DI SAMPING BARANG KURANG) -->
                     <div class="row g-3 mb-4">
                         <div class="col-md">
                             <div class="card p-3 card-stat" id="card-filter-semua" onclick="setStatFilter('semua')" style="border-left-color: var(--primary-color);">
@@ -271,6 +267,18 @@
                                     <div>
                                         <p class="text-muted small mb-1">Barang Kurang</p>
                                         <h4 class="fw-bold mb-0 text-danger" id="rekap-kurang">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- KARTU BARANG TEMUAN DI SAMPING BARANG KURANG -->
+                        <div class="col-md">
+                            <div class="card p-3 card-stat" id="card-filter-temuan" onclick="setStatFilter('temuan')" style="border-left-color: #8b5cf6;">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon me-3" style="background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+                                    <div>
+                                        <p class="text-muted small mb-1">Barang Temuan</p>
+                                        <h4 class="fw-bold mb-0" id="rekap-temuan" style="color: #8b5cf6;">0</h4>
                                     </div>
                                 </div>
                             </div>
@@ -532,79 +540,6 @@
                     </div>
                 </div>
 
-                <!-- TAB BARU: DASHBOARD BARANG TEMUAN -->
-                <div id="tab-barang-temuan" class="tab-content-section" style="display: none;">
-                    <!-- KARTU STATISTIK RINGKASAN BARANG TEMUAN -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="card p-3 card-stat" style="border-left-color: #8b5cf6;">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon bg-purple bg-opacity-10 text-purple me-3" style="background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="fa-solid fa-magnifying-glass-location"></i></div>
-                                    <div>
-                                        <p class="text-muted small mb-1">Total Barang Temuan</p>
-                                        <h4 class="fw-bold mb-0 text-purple" id="temuan-total" style="color: #8b5cf6;">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card p-3 card-stat" style="border-left-color: #f59e0b;">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3"><i class="fa-solid fa-location-pin-lock"></i></div>
-                                    <div>
-                                        <p class="text-muted small mb-1">Salah Bin Lokasi</p>
-                                        <h4 class="fw-bold mb-0 text-warning" id="temuan-salah-bin">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card p-3 card-stat" style="border-left-color: #ef4444;">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon bg-danger bg-opacity-10 text-danger me-3"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                                    <div>
-                                        <p class="text-muted small mb-1">Tidak Terdaftar di Sistem</p>
-                                        <h4 class="fw-bold mb-0 text-danger" id="temuan-tidak-terdaftar">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- KONTROL & TABEL DETAIL BARANG TEMUAN -->
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <h5 class="card-title fw-bold text-dark m-0">
-                                <i class="fa-solid fa-triangle-exclamation me-2 text-success"></i>Detail Barang Temuan Gudang <span class="active-wh-text">H50</span>
-                            </h5>
-                            <div class="d-flex gap-2 flex-wrap">
-                                <div style="width: 280px;">
-                                    <input type="text" id="search-temuan" class="form-control form-control-sm" placeholder="🔍 Cari barang temuan..." onkeyup="handleSearchInput('temuan')">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body px-0 pt-0">
-                            <div class="table-responsive">
-                                <table class="table table-custom align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th class="ps-4">Tanggal STO</th>
-                                            <th>Gudang</th>
-                                            <th>Lokasi Bin Aktual</th>
-                                            <th>Part Number</th>
-                                            <th>Nama Barang</th>
-                                            <th>Stok Fisik Opname</th>
-                                            <th class="pe-4">Kategori Temuan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="table-barang-temuan"></tbody>
-                                </table>
-                            </div>
-                            <div id="pagination-temuan" class="d-flex justify-content-between align-items-center p-3 border-top"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- TAB: HAPUS DATA -->
                 <div id="tab-hapus-data" class="tab-content-section" style="display: none;">
                     <div class="row g-4">
@@ -853,9 +788,9 @@
             return { userWadig: userWadig || '-', nama: userNama || '-' };
         }
 
-        // State Gudang Aktif & Pagination
+        // State Gudang Aktif & Pagination (Diubah menjadi 25 item per halaman)
         let currentWarehouse = 'H50';
-        const pageSize = 50;
+        const pageSize = 25;
         let currentPages = {
             rekapan: 1,
             sistem: 1,
@@ -863,8 +798,7 @@
             masuk: 1,
             keluar: 1,
             gantung: 1,
-            selisih: 1,
-            temuan: 1 // Halaman pagination khusus tab Barang Temuan
+            selisih: 1
         };
         let searchTimeouts = {};
 
@@ -1000,7 +934,24 @@
             return { mapFisik, mapTanggalFisik };
         }
 
-        function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung) {
+        // Logika Pengecekan Barang Temuan (Salah Bin atau Tidak Terdaftar di Sistem)
+        function checkStatusTemuan(pn, bin, stokSistemAwal) {
+            let cleanPn = normPN(pn);
+            let cleanBin = normBin(bin);
+            let sList = getWhData(sistemData);
+
+            let registeredInAnyBin = sList.some(s => normPN(s['Part Number']) === cleanPn);
+            let registeredInThisBin = sList.some(s => normPN(s['Part Number']) === cleanPn && normBin(s['Bin']) === cleanBin);
+
+            if (!registeredInAnyBin) {
+                return { isTemuan: true, kategoriCode: 'temuan', keterangan: 'Barang Temuan (Tidak Terdaftar di Sistem)' };
+            } else if (!registeredInThisBin) {
+                return { isTemuan: true, kategoriCode: 'temuan', keterangan: 'Barang Temuan (Salah Bin Lokasi)' };
+            }
+            return { isTemuan: false, kategoriCode: '', keterangan: '' };
+        }
+
+        function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn = '', bin = '') {
             let stokSistemAkhir = stokSistemAwal + totalMasuk - totalKeluar;
             let result = {
                 stokSistemAwal, totalMasuk, totalKeluar, effectiveKeluar: totalKeluar,
@@ -1008,23 +959,30 @@
                 fisikAkhir: null,
                 selisih: null, statusKategoriCode: '', statusKeterangan: ''
             };
+
             if (fisikAwal === null) {
                 result.statusKategoriCode = 'belum';
                 result.statusKeterangan = 'Belum Di-STO';
             } else {
-                let fisikAkhir = fisikAwal;
-                result.fisikAkhir = fisikAkhir;
-                let selisih = fisikAkhir - stokSistemAkhir;
-                result.selisih = selisih;
-                if (selisih > 0) {
-                    result.statusKategoriCode = 'lebih';
-                    result.statusKeterangan = 'Selisih Lebih (+' + selisih + ')';
-                } else if (selisih < 0) {
-                    result.statusKategoriCode = 'kurang';
-                    result.statusKeterangan = 'Barang Kurang (' + selisih + ')';
+                let cekTemuan = checkStatusTemuan(pn, bin, stokSistemAwal);
+                if (cekTemuan.isTemuan) {
+                    result.statusKategoriCode = 'temuan';
+                    result.statusKeterangan = cekTemuan.keterangan;
                 } else {
-                    result.statusKategoriCode = 'sesuai';
-                    result.statusKeterangan = 'Sesuai';
+                    let fisikAkhir = fisikAwal;
+                    result.fisikAkhir = fisikAkhir;
+                    let selisih = fisikAkhir - stokSistemAkhir;
+                    result.selisih = selisih;
+                    if (selisih > 0) {
+                        result.statusKategoriCode = 'lebih';
+                        result.statusKeterangan = 'Selisih Lebih (+' + selisih + ')';
+                    } else if (selisih < 0) {
+                        result.statusKategoriCode = 'kurang';
+                        result.statusKeterangan = 'Barang Kurang (' + selisih + ')';
+                    } else {
+                        result.statusKategoriCode = 'sesuai';
+                        result.statusKeterangan = 'Sesuai';
+                    }
                 }
             }
             return result;
@@ -1087,6 +1045,10 @@
                 } else if (filterType === 'kurang') {
                     badge.innerText = "Filter: Barang Kurang";
                     badge.className = "badge bg-danger ms-2 fs-6";
+                } else if (filterType === 'temuan') {
+                    badge.innerText = "Filter: Barang Temuan";
+                    badge.className = "badge text-white ms-2 fs-6";
+                    badge.style.backgroundColor = "#8b5cf6";
                 } else if (filterType === 'belum') {
                     badge.innerText = "Filter: Belum STO Opname";
                     badge.className = "badge bg-warning text-dark ms-2 fs-6";
@@ -1529,7 +1491,7 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn, bin);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
                 let statusKategoriCode = hitung.statusKategoriCode;
                 let statusKeterangan = hitung.statusKeterangan;
@@ -1606,7 +1568,7 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung);
+                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung, pn, bin);
 
                 exportRows.push({
                     "Tanggal STO": item['Tanggal STO'] || '-',
@@ -1666,7 +1628,7 @@
             let mapKeluar = {};
             filteredKeluarForSelisih.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
-                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(m['Jumlah Keluar']) || 0); // Diperbaiki dari m['Jumlah Keluar'] ke k['Jumlah Keluar'] secara aman
+                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
             let mapSistemAwal = {};
@@ -1724,7 +1686,7 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn, bin);
                 let stokSistemAkhir = hitung.stokSistemAkhir;
                 let selisih = hitung.selisih === null ? stokSistemAkhir : hitung.selisih;
                 let statusKeterangan = hitung.statusKeterangan;
@@ -1830,7 +1792,7 @@
                     if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
                 });
 
-                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung);
+                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung, cleanPn, binKeyName);
                 let sysAkhir = hitung.stokSistemAkhir;
 
                 let statusBadge = "";
@@ -1842,9 +1804,15 @@
                 } else {
                     let selisih = hitung.selisih;
                     fisikDisplay = `${fisikVal} <small class="text-muted">(${tglFisik})</small>`;
-                    if (selisih > 0) statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
-                    else if (selisih < 0) statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
-                    else statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
+                    if (hitung.statusKategoriCode === 'temuan') {
+                        statusBadge = `<span class="badge px-2 py-1 text-white" style="background-color: #8b5cf6;">${hitung.statusKeterangan}</span>`;
+                    } else if (selisih > 0) {
+                        statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih (+${selisih})</span>`;
+                    } else if (selisih < 0) {
+                        statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang (${selisih})</span>`;
+                    } else {
+                        statusBadge = `<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai (Aman)</span>`;
+                    }
                 }
 
                 let isCurrentClickedBin = (binKeyName === normBin(cleanBin));
@@ -2031,7 +1999,6 @@
                 'stok-keluar': 'Riwayat Stok Keluar Harian',
                 'delivery-gantung': 'Daftar Delivery Gantung',
                 'selisih': 'Laporan Kontrol Selisih Waktu',
-                'barang-temuan': 'Dashboard Barang Temuan STO',
                 'hapus-data': 'Kelola dan Hapus Data Gudang'
             };
             document.getElementById('page-title').innerText = titleMap[tabId] || 'Dashboard';
@@ -2072,6 +2039,7 @@
             let sesuaiCount = 0;
             let lebihCount = 0;
             let kurangCount = 0;
+            let temuanCount = 0;
             let belumCount = 0;
 
             let masterListToProcess = [];
@@ -2116,7 +2084,7 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn, bin);
                 let statusKode = hitung.statusKategoriCode;
                 let statusKet = hitung.statusKeterangan;
 
@@ -2124,6 +2092,7 @@
                 if (statusKode === 'sesuai') sesuaiCount++;
                 else if (statusKode === 'lebih') lebihCount++;
                 else if (statusKode === 'kurang') kurangCount++;
+                else if (statusKode === 'temuan') temuanCount++;
                 else if (statusKode === 'belum') belumCount++;
 
                 if (currentStatFilter !== 'semua' && currentStatFilter !== statusKode) return;
@@ -2138,15 +2107,20 @@
             document.getElementById('rekap-sesuai').innerText = sesuaiCount;
             document.getElementById('rekap-lebih').innerText = lebihCount;
             document.getElementById('rekap-kurang').innerText = kurangCount;
+            document.getElementById('rekap-temuan').innerText = temuanCount;
             document.getElementById('rekap-belum').innerText = belumCount;
 
             let paginatedRekapan = filteredRekapanRows.slice((currentPages.rekapan - 1) * pageSize, currentPages.rekapan * pageSize);
             let rekapanHtml = '';
             paginatedRekapan.forEach(r => {
                 let badgeClass = 'bg-secondary';
+                let customBadgeStyle = '';
                 if (r.statusKode === 'sesuai') badgeClass = 'bg-success bg-opacity-10 text-success';
                 else if (r.statusKode === 'lebih') badgeClass = 'bg-info bg-opacity-10 text-dark';
                 else if (r.statusKode === 'kurang') badgeClass = 'bg-danger bg-opacity-10 text-danger';
+                else if (r.statusKode === 'temuan') {
+                    customBadgeStyle = 'background-color: #8b5cf6; color: white;';
+                }
                 else if (r.statusKode === 'belum') badgeClass = 'bg-warning bg-opacity-10 text-dark';
 
                 rekapanHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(r.pn)}', '${safeBin(r.bin)}', event)">
@@ -2154,7 +2128,7 @@
                     <td><span class="badge bg-light text-dark border px-2 py-1">${r.bin}</span></td>
                     <td><span class="part-number-link">${r.pn}</span></td>
                     <td>${r.nama}</td>
-                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1">${r.statusKet}</span></td>
+                    <td class="pe-4"><span class="badge ${badgeClass} px-2 py-1" style="${customBadgeStyle}">${r.statusKet}</span></td>
                 </tr>`;
             });
             if (!rekapanHtml) rekapanHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data yang cocok dengan filter atau pencarian.</td></tr>`;
@@ -2220,12 +2194,9 @@
 
             let paginatedFisik = filteredFisikRows.slice((currentPages.fisik - 1) * pageSize, currentPages.fisik * pageSize);
             let fisikHtml = '';
-            paginatedFisik.forEach(obj => {
-                let item = obj.item;
-                let idx = obj.originalIdx;
+            paginatedFisik.forEach(({ item, originalIdx }) => {
                 let pn = item['Part Number'];
                 let bin = item['Bin'] || '-';
-
                 let key = buildStokKey(pn, bin);
                 let sysAwal = mapSistemAwal[key] || 0;
                 let tMasuk = mapMasuk[key] || 0;
@@ -2239,27 +2210,29 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung);
-                let badgeClass = 'bg-secondary';
-                if (hitung.statusKategoriCode === 'sesuai') badgeClass = 'bg-success bg-opacity-10 text-success';
-                else if (hitung.statusKategoriCode === 'lebih') badgeClass = 'bg-info bg-opacity-10 text-dark';
-                else if (hitung.statusKategoriCode === 'kurang') badgeClass = 'bg-danger bg-opacity-10 text-danger';
+                let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, item['Stok Fisik Awal'], hasGantung, pn, bin);
+                let statusBadge = '';
+                let stCode = hitung.statusKategoriCode;
+                if (stCode === 'sesuai') statusBadge = '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai</span>';
+                else if (stCode === 'lebih') statusBadge = '<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Selisih Lebih</span>';
+                else if (stCode === 'kurang') statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Barang Kurang</span>';
+                else if (stCode === 'temuan') statusBadge = `<span class="badge text-white px-2 py-1" style="background-color: #8b5cf6;">${hitung.statusKeterangan}</span>`;
 
-                fisikHtml += `<tr>
+                fisikHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
                     <td class="ps-4">${item['Tanggal STO'] || '-'}</td>
                     <td class="fw-bold">${currentWarehouse}</td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
-                    <td>${item['Nama Barang']}</td>
-                    <td class="fw-bold">${item['Stok Fisik Awal']}</td>
-                    <td><span class="badge ${badgeClass} px-2 py-1">${hitung.statusKeterangan}</span></td>
+                    <td><span class="part-number-link">${pn}</span></td>
+                    <td>${item['Nama Barang'] || '-'}</td>
+                    <td class="fw-bold">${item['Stok Fisik Awal'] || 0}</td>
+                    <td>${statusBadge}</td>
                     <td class="pe-4 text-center">
-                        <button class="btn btn-sm btn-outline-primary py-0 px-2 me-1" onclick="editStokFisikRow(${idx})"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="hapusStokFisikRow(${idx})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 me-1" onclick="editStokFisikRow(${originalIdx}); event.stopPropagation();"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="hapusStokFisikRow(${originalIdx}); event.stopPropagation();"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             });
-            if (!fisikHtml) fisikHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data stok fisik (opname).</td></tr>`;
+            if (!fisikHtml) fisikHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data stok fisik.</td></tr>`;
             document.getElementById('table-fisik').innerHTML = fisikHtml;
             renderPagination('fisik', filteredFisikRows.length);
 
@@ -2274,9 +2247,7 @@
                 if (startMasuk && tgl && tgl < startMasuk) return;
                 if (endMasuk && tgl && tgl > endMasuk) return;
 
-                let pn = m['Part Number'];
-                let bin = m['Bin'] || '-';
-                let rowText = `${pn} ${m['Nama Barang']} ${bin} ${m['User Wadig']} ${m['Nama User']}`.toLowerCase();
+                let rowText = `${m['Part Number']} ${m['Nama Barang']} ${m['Bin']} ${m['User Wadig']} ${m['Nama User']} ${m.Tanggal}`.toLowerCase();
                 if (searchMasuk && !rowText.includes(searchMasuk)) return;
 
                 filteredMasukRows.push(m);
@@ -2288,18 +2259,18 @@
                 let tgl = parseExcelDate(m.Tanggal);
                 let pn = m['Part Number'];
                 let bin = m['Bin'] || '-';
-                masukHtml += `<tr>
+                masukHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
                     <td class="ps-4">${tgl || '-'}</td>
                     <td class="fw-bold">${currentWarehouse}</td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
+                    <td><span class="part-number-link">${pn}</span></td>
                     <td>${m['Nama Barang'] || '-'}</td>
-                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${m['User Wadig'] || '-'}</span></td>
-                    <td>${m['Nama User'] || '-'}</td>
+                    <td><code>${m['User Wadig'] || '-'}</code></td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${m['Nama User'] || '-'}</span></td>
                     <td class="pe-4 text-success fw-bold">+${m['Jumlah Masuk']}</td>
                 </tr>`;
             });
-            if (!masukHtml) masukHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Belum ada riwayat stok masuk.</td></tr>`;
+            if (!masukHtml) masukHtml = `<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada riwayat stok masuk.</td></tr>`;
             document.getElementById('table-masuk').innerHTML = masukHtml;
             renderPagination('masuk', filteredMasukRows.length);
 
@@ -2314,9 +2285,7 @@
                 if (startKeluar && tgl && tgl < startKeluar) return;
                 if (endKeluar && tgl && tgl > endKeluar) return;
 
-                let pn = k['Part Number'];
-                let bin = k['Bin'] || '-';
-                let rowText = `${pn} ${k['Nama Barang']} ${bin} ${k['No. Delivery']} ${k['User Wadig']} ${k['Nama User']}`.toLowerCase();
+                let rowText = `${k['No. Delivery']} ${k['Part Number']} ${k['Nama Barang']} ${k['Bin']} ${k['User Wadig']} ${k['Nama User']} ${k.Tanggal}`.toLowerCase();
                 if (searchKeluar && !rowText.includes(searchKeluar)) return;
 
                 filteredKeluarRows.push(k);
@@ -2328,19 +2297,19 @@
                 let tgl = parseExcelDate(k.Tanggal);
                 let pn = k['Part Number'];
                 let bin = k['Bin'] || '-';
-                keluarHtml += `<tr>
+                keluarHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
                     <td class="ps-4">${tgl || '-'}</td>
                     <td><code class="text-primary">${k['No. Delivery'] || '-'}</code></td>
                     <td class="fw-bold">${currentWarehouse}</td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
+                    <td><span class="part-number-link">${pn}</span></td>
                     <td>${k['Nama Barang'] || '-'}</td>
-                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${k['User Wadig'] || '-'}</span></td>
-                    <td>${k['Nama User'] || '-'}</td>
+                    <td><code>${k['User Wadig'] || '-'}</code></td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-dark">${k['Nama User'] || '-'}</span></td>
                     <td class="pe-4 text-danger fw-bold">-${k['Jumlah Keluar']}</td>
                 </tr>`;
             });
-            if (!keluarHtml) keluarHtml = `<tr><td colspan="9" class="text-center text-muted py-4">Belum ada riwayat stok keluar.</td></tr>`;
+            if (!keluarHtml) keluarHtml = `<tr><td colspan="9" class="text-center text-muted py-4">Tidak ada riwayat stok keluar.</td></tr>`;
             document.getElementById('table-keluar').innerHTML = keluarHtml;
             renderPagination('keluar', filteredKeluarRows.length);
 
@@ -2349,11 +2318,12 @@
             let filteredGantungRows = [];
 
             gList.forEach(g => {
-                let pn = g['Part Number'];
-                let bin = g['Bin'] || '-';
-                let rowText = `${g['No. Delivery']} ${pn} ${g['Material Deskripsi']} ${bin} ${g['No. Kartu']}`.toLowerCase();
-                if (searchGantung && !rowText.includes(searchGantung)) return;
-                filteredGantungRows.push(g);
+                let doNum = String(g['No. Delivery'] || '').trim().toLowerCase();
+                if (gantungDoSet.has(doNum)) {
+                    let rowText = `${g['No. Delivery']} ${g['Part Number']} ${g['Material Deskripsi']} ${g['Bin']} ${g['No. Kartu']}`.toLowerCase();
+                    if (searchGantung && !rowText.includes(searchGantung)) return;
+                    filteredGantungRows.push(g);
+                }
             });
 
             let paginatedGantung = filteredGantungRows.slice((currentPages.gantung - 1) * pageSize, currentPages.gantung * pageSize);
@@ -2361,23 +2331,22 @@
             paginatedGantung.forEach(g => {
                 let pn = g['Part Number'];
                 let bin = g['Bin'] || '-';
-                gantungHtml += `<tr>
+                gantungHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">
                     <td class="ps-4"><code class="text-primary">${g['No. Delivery']}</code></td>
                     <td><span class="badge bg-light text-dark border px-2 py-1">${bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(pn)}', '${safeBin(bin)}', event)">${pn}</span></td>
-                    <td>${g['Material Deskripsi']}</td>
-                    <td class="pe-4"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu']}</span></td>
+                    <td><span class="part-number-link">${pn}</span></td>
+                    <td>${g['Material Deskripsi'] || '-'}</td>
+                    <td class="pe-4"><span class="badge bg-warning bg-opacity-10 text-dark">${g['No. Kartu'] || '-'}</span></td>
                 </tr>`;
             });
-            if (!gantungHtml) gantungHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data delivery gantung.</td></tr>`;
+            if (!gantungHtml) gantungHtml = `<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data delivery gantung aktif.</td></tr>`;
             document.getElementById('table-delivery-gantung').innerHTML = gantungHtml;
             renderPagination('gantung', filteredGantungRows.length);
 
-            // --- 7. RENDER TAB SELISIH ---
+            // --- 7. RENDER TAB LAPORAN SELISIH ---
             let selisihStart = document.getElementById('filter-selisih-start')?.value || '';
             let selisihEnd = document.getElementById('filter-selisih-end')?.value || '';
             let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
-            let filteredSelisihRows = [];
 
             let filteredMasukForSelisih = inList.filter(m => {
                 let tgl = parseExcelDate(m.Tanggal);
@@ -2395,34 +2364,20 @@
                 return true;
             });
 
-            let mapMasukSelisih = {};
+            let mapSelisihMasuk = {};
             filteredMasukForSelisih.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
-                mapMasukSelisih[key] = (mapMasukSelisih[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+                mapSelisihMasuk[key] = (mapSelisihMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
-            let mapKeluarSelisih = {};
+            let mapSelisihKeluar = {};
             filteredKeluarForSelisih.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
-                mapKeluarSelisih[key] = (mapKeluarSelisih[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+                mapSelisihKeluar[key] = (mapSelisihKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
-            let selisihMasterList = [];
-            let processedSelisihKeys = new Set();
-            sList.forEach(s => {
-                let key = buildStokKey(s['Part Number'], s['Bin']);
-                processedSelisihKeys.add(key);
-                selisihMasterList.push({ 'Part Number': s['Part Number'], 'Nama Barang': s['Nama Barang'], 'Bin': s['Bin'] });
-            });
-            mList.forEach(f => {
-                let key = buildStokKey(f['Part Number'], f['Bin']);
-                if (!processedSelisihKeys.has(key)) {
-                    processedSelisihKeys.add(key);
-                    selisihMasterList.push({ 'Part Number': f['Part Number'], 'Nama Barang': f['Nama Barang'], 'Bin': f['Bin'] });
-                }
-            });
-
-            selisihMasterList.forEach(item => {
+            let filteredSelisihRows = [];
+            masterListToProcess.forEach(item => {
                 let pn = item['Part Number'];
                 let nama = item['Nama Barang'];
                 let bin = item['Bin'] || '-';
@@ -2438,8 +2393,8 @@
 
                 let stokSistemAwal = mapSistemAwal[key] || 0;
                 let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
-                let totalMasuk = mapMasukSelisih[key] || 0;
-                let totalKeluar = mapKeluarSelisih[key] || 0;
+                let totalMasuk = mapSelisihMasuk[key] || 0;
+                let totalKeluar = mapSelisihKeluar[key] || 0;
                 
                 let hasGantung = false;
                 gList.forEach(g => {
@@ -2449,130 +2404,45 @@
                     }
                 });
 
-                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung);
-                let stokSistemAkhir = hitung.stokSistemAkhir;
-                let selisih = hitung.selisih === null ? stokSistemAkhir : hitung.selisih;
-                let statusKet = hitung.statusKeterangan;
-                let fisikDisplay = fisikAwal === null ? "Belum Di-STO" : fisikAwal;
-
+                let hitung = hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn, bin);
                 let rowText = `${pn} ${nama} ${bin}`.toLowerCase();
                 if (searchSelisih && !rowText.includes(searchSelisih)) return;
 
-                filteredSelisihRows.push({ pn, nama, bin, stokSistemAwal, totalMasuk, totalKeluar, stokSistemAkhir, fisikDisplay, selisih, statusKet });
+                filteredSelisihRows.push({ pn, nama, bin, stokSistemAwal, totalMasuk, totalKeluar, hitung, tglFisik, fisikAwal });
             });
 
             let paginatedSelisih = filteredSelisihRows.slice((currentPages.selisih - 1) * pageSize, currentPages.selisih * pageSize);
             let selisihHtml = '';
-            paginatedSelisih.forEach(r => {
-                selisihHtml += `<tr>
+            paginatedSelisih.forEach(d => {
+                let fisikDisplay = d.fisikAwal === null ? `<span class="badge bg-warning bg-opacity-10 text-warning">Belum Opname</span>` : `${d.fisikAwal} <small class="text-muted">(${d.tglFisik})</small>`;
+                let statusBadge = '';
+                let stCode = d.hitung.statusKategoriCode;
+                if (stCode === 'sesuai') statusBadge = '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Sesuai</span>';
+                else if (stCode === 'lebih') statusBadge = `<span class="badge bg-info bg-opacity-10 text-dark px-2 py-1">Lebih (+${d.hitung.selisih})</span>`;
+                else if (stCode === 'kurang') statusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Kurang (${d.hitung.selisih})</span>`;
+                else if (stCode === 'temuan') statusBadge = `<span class="badge text-white px-2 py-1" style="background-color: #8b5cf6;">${d.hitung.statusKeterangan}</span>`;
+                else statusBadge = `<span class="badge bg-warning bg-opacity-10 text-dark px-2 py-1">Belum Di-STO</span>`;
+
+                selisihHtml += `<tr class="clickable-row" onclick="showPartDetailModal('${safePN(d.pn)}', '${safeBin(d.bin)}', event)">
                     <td class="ps-4 fw-bold">${currentWarehouse}</td>
-                    <td><span class="badge bg-light text-dark border px-2 py-1">${r.bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(r.pn)}', '${safeBin(r.bin)}', event)">${r.pn}</span></td>
-                    <td>${r.nama}</td>
-                    <td>${r.stokSistemAwal}</td>
-                    <td class="text-success">+${r.totalMasuk}</td>
-                    <td class="text-danger">-${r.totalKeluar}</td>
-                    <td class="fw-bold">${r.stokSistemAkhir}</td>
-                    <td class="fw-bold">${r.fisikDisplay}</td>
-                    <td class="pe-4"><span class="badge bg-secondary bg-opacity-10 text-dark px-2 py-1">${r.statusKet}</span></td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1">${d.bin}</span></td>
+                    <td><span class="part-number-link">${d.pn}</span></td>
+                    <td>${d.nama}</td>
+                    <td class="fw-bold">${d.stokSistemAwal}</td>
+                    <td class="text-success fw-bold">+${d.totalMasuk}</td>
+                    <td class="text-danger fw-bold">-${d.totalKeluar}</td>
+                    <td class="fw-bold text-primary">${d.hitung.stokSistemAkhir}</td>
+                    <td>${fisikDisplay}</td>
+                    <td class="pe-4">${statusBadge}</td>
                 </tr>`;
             });
-            if (!selisihHtml) selisihHtml = `<tr><td colspan="10" class="text-center text-muted py-4">Tidak ada data selisih waktu.</td></tr>`;
+            if (!selisihHtml) selisihHtml = `<tr><td colspan="10" class="text-center text-muted py-4">Tidak ada data kontrol selisih.</td></tr>`;
             document.getElementById('table-selisih').innerHTML = selisihHtml;
             renderPagination('selisih', filteredSelisihRows.length);
-
-            // --- 8. RENDER TAB BARU: BARANG TEMUAN ---
-            // Logika Barang Temuan:
-            // 1. Part number sama sekali tidak terdaftar di master data sistem gudang.
-            // 2. Part number ada di sistem, tetapi lokasi bin aktual saat STO berbeda dengan lokasi bin di sistem (salah bin lokasi).
-            let sistemBinsByPN = {}; // Memetakan PN ke daftar Bin sistem yang valid
-            sList.forEach(s => {
-                let pnNorm = normPN(s['Part Number']);
-                if (!sistemBinsByPN[pnNorm]) sistemBinsByPN[pnNorm] = new Set();
-                sistemBinsByPN[pnNorm].add(normBin(s['Bin']));
-            });
-
-            let globalSystemPNSet = new Set(Object.keys(sistemBinsByPN));
-            let barangTemuanRows = [];
-            let countSalahBin = 0;
-            let countTidakTerdaftar = 0;
-
-            mList.forEach(m => {
-                let pn = m['Part Number'];
-                let binAktual = m['Bin'] || '-';
-                let pnNorm = normPN(pn);
-                let binAktualNorm = normBin(binAktual);
-
-                let isTidakTerdaftar = !globalSystemPNSet.has(pnNorm);
-                let isSalahBin = false;
-
-                if (!isTidakTerdaftar) {
-                    // Ada di sistem, cek apakah bin aktual cocok dengan salah satu bin di sistem
-                    let validBins = sistemBinsByPN[pnNorm];
-                    if (!validBins.has(binAktualNorm)) {
-                        isSalahBin = true;
-                    }
-                }
-
-                if (isTidakTerdaftar || isSalahBin) {
-                    let kategoriTemuan = "";
-                    let badgeTemuanClass = "";
-
-                    if (isTidakTerdaftar) {
-                        countTidakTerdaftar++;
-                        kategoriTemuan = "Tidak Terdaftar di Sistem";
-                        badgeTemuanClass = "bg-danger bg-opacity-10 text-danger";
-                    } else if (isSalahBin) {
-                        countSalahBin++;
-                        kategoriTemuan = "Salah Bin Lokasi";
-                        badgeTemuanClass = "bg-warning bg-opacity-10 text-dark";
-                    }
-
-                    barangTemuanRows.push({
-                        tgl: m['Tanggal STO'] || '-',
-                        bin: binAktual,
-                        pn: pn,
-                        nama: m['Nama Barang'] || '-',
-                        qty: m['Stok Fisik Awal'] || 0,
-                        kategori: kategoriTemuan,
-                        badgeClass: badgeTemuanClass
-                    });
-                }
-            });
-
-            document.getElementById('temuan-total').innerText = barangTemuanRows.length;
-            document.getElementById('temuan-salah-bin').innerText = countSalahBin;
-            document.getElementById('temuan-tidak-terdaftar').innerText = countTidakTerdaftar;
-
-            let searchTemuan = (document.getElementById('search-temuan')?.value || '').toLowerCase();
-            let filteredTemuanRows = barangTemuanRows.filter(item => {
-                let rowText = `${item.tgl} ${item.bin} ${item.pn} ${item.nama} ${item.kategori}`.toLowerCase();
-                if (searchTemuan && !rowText.includes(searchTemuan)) return false;
-                return true;
-            });
-
-            let paginatedTemuan = filteredTemuanRows.slice((currentPages.temuan - 1) * pageSize, currentPages.temuan * pageSize);
-            let temuanHtml = '';
-            paginatedTemuan.forEach(item => {
-                temuanHtml += `<tr>
-                    <td class="ps-4">${item.tgl}</td>
-                    <td class="fw-bold">${currentWarehouse}</td>
-                    <td><span class="badge bg-light text-dark border px-2 py-1 fw-bold">${item.bin}</span></td>
-                    <td><span class="part-number-link" onclick="showPartDetailModal('${safePN(item.pn)}', '${safeBin(item.bin)}', event)">${item.pn}</span></td>
-                    <td>${item.nama}</td>
-                    <td class="fw-bold">${item.qty}</td>
-                    <td class="pe-4"><span class="badge ${item.badgeClass} px-2 py-1 fw-bold">${item.kategori}</span></td>
-                </tr>`;
-            });
-            if (!temuanHtml) temuanHtml = `<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data barang temuan di gudang ini.</td></tr>`;
-            document.getElementById('table-barang-temuan').innerHTML = temuanHtml;
-            renderPagination('temuan', filteredTemuanRows.length);
         }
 
-        // Inisialisasi awal saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', () => {
-            switchTab('rekapan');
-        });
+        // Init First Load
+        renderAll();
     </script>
 </body>
 </html>
