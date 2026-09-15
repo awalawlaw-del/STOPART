@@ -219,16 +219,26 @@
 
                 <!-- TAB: REKAPAN DASHBOARD -->
                 <div id="tab-rekapan" class="tab-content-section">
-                    <!-- FILTER TANGGAL DASHBOARD -->
+                    <!-- FILTER TANGGAL & MODE LAPORAN STO -->
                     <div class="card shadow-sm mb-3">
                         <div class="card-body bg-light rounded-3 p-3 d-flex align-items-center gap-3 flex-wrap">
-                            <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-calendar-days me-1"></i> Filter Berdasarkan Tanggal STO:</label>
-                            <input type="date" id="filter-dashboard-tgl" class="form-control form-control-sm" style="width: 200px;" onchange="renderAll()">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="resetDashboardTanggal()">Tampilkan Semua Tanggal</button>
+                            <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-calendar-days me-1"></i> Filter Tanggal STO:</label>
+                            <input type="date" id="filter-dashboard-tgl" class="form-control form-control-sm" style="width: 170px;" onchange="renderAll()">
+                            
+                            <!-- PILIHAN MODE LAPORAN (MURNI CUTOFF vs REALTIME) -->
+                            <div class="d-flex align-items-center gap-2 border-start ps-3">
+                                <label class="fw-bold small text-muted mb-0"><i class="fa-solid fa-filter-circle-dollar me-1"></i> Mode Laporan:</label>
+                                <select id="filter-mode-laporan" class="form-select form-select-sm" style="width: 210px;" onchange="renderAll()">
+                                    <option value="murni">1. Murni (Snapshot Cutoff STO)</option>
+                                    <option value="realtime">2. Real-Time (Stok Berjalan)</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="resetDashboardTanggal()">Reset Filter</button>
                         </div>
                     </div>
 
-                    <!-- KARTU STATISTIK (DIPISAH MENJADI 2 MENU BARANG TEMUAN) -->
+                    <!-- KARTU STATISTIK -->
                     <div class="row g-3 mb-4">
                         <div class="col">
                             <div class="card p-3 card-stat" id="card-filter-semua" onclick="setStatFilter('semua')" style="border-top-color: var(--primary-color);">
@@ -949,7 +959,6 @@
             return { mapFisik, mapTanggalFisik };
         }
 
-        // Logika Pengecekan 2 Jenis Barang Temuan (Dipecah)
         function checkStatusTemuan(pn, bin, stokSistemAwal) {
             let cleanPn = normPN(pn);
             let cleanBin = normBin(bin);
@@ -1080,6 +1089,8 @@
 
         function resetDashboardTanggal() {
             document.getElementById('filter-dashboard-tgl').value = '';
+            let modeSelect = document.getElementById('filter-mode-laporan');
+            if (modeSelect) modeSelect.value = 'murni';
             currentPages.rekapan = 1;
             renderAll();
         }
@@ -1226,8 +1237,6 @@
                 }
             }
 
-            // PERBAIKAN: Input fisik manual TIDAK LAGI memanggil checkAndAutoRegisterSistem() agar tidak otomatis masuk ke master stok sistem
-
             saveDataToStorage();
             renderAll();
 
@@ -1350,7 +1359,6 @@
                                     'Stok Fisik Awal': fisikQty
                                 });
                             }
-                            // PERBAIKAN: Upload stok fisik TIDAK LAGI memanggil checkAndAutoRegisterSistem()
                         }
                         else if (cleanSheetName.includes('sistem') || cleanSheetName.includes('master')) {
                             let sysAwal = Number(getVal(r, ['Stok Sistem Awal', 'StokSistemAwal', 'Stok Sistem', 'Stok Awal', 'Sistem', 'Stok'])) || 0;
@@ -1374,7 +1382,6 @@
                             let tglMasuk = parseExcelDate(getVal(r, ['Tanggal', 'Date', 'Tgl']));
                             let qtyMasuk = Number(getVal(r, ['Jumlah Masuk', 'JumlahMasuk', 'Qty Masuk', 'Masuk', 'Qty', 'Jumlah'])) || 0;
 
-                            // HANYA UNTUK STO/BARANG MASUK: Auto register sistem tetap aktif
                             checkAndAutoRegisterSistem(pn, nama, bin, targetWh);
                             inList.push({
                                 Tanggal: tglMasuk,
@@ -1452,15 +1459,23 @@
             let sList = getWhData(sistemData);
             let mList = getWhData(masterData);
 
+            let modeLaporan = document.getElementById('filter-mode-laporan')?.value || 'murni';
+            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+            let gantungDoSet = getMapDOStatusGantung();
+
             let mapMasuk = {};
             inList.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
+                let tglTransaksi = parseExcelDate(m.Tanggal);
+                if (modeLaporan === 'murni' && filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
             outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
+                let tglTransaksi = parseExcelDate(k.Tanggal);
+                if (modeLaporan === 'murni' && filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
@@ -1471,8 +1486,6 @@
             });
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
-            let gantungDoSet = getMapDOStatusGantung();
 
             let masterListToProcess = [];
             let processedKeys = new Set();
@@ -2034,15 +2047,25 @@
             let outList = getWhData(keluarData);
             let gList = getWhData(deliveryGantungData);
 
+            let modeLaporan = document.getElementById('filter-mode-laporan')?.value || 'murni';
+            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+            let gantungDoSet = getMapDOStatusGantung();
+
+            // Peta Mutasi Masuk dengan Cutoff Tanggal STO jika Mode Murni aktif
             let mapMasuk = {};
             inList.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
+                let tglTransaksi = parseExcelDate(m.Tanggal);
+                if (modeLaporan === 'murni' && filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
+            // Peta Mutasi Keluar dengan Cutoff Tanggal STO jika Mode Murni aktif
             let mapKeluar = {};
             outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
+                let tglTransaksi = parseExcelDate(k.Tanggal);
+                if (modeLaporan === 'murni' && filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
@@ -2053,8 +2076,6 @@
             });
 
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
-            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
-            let gantungDoSet = getMapDOStatusGantung();
 
             // --- 1. RENDER TAB REKAPAN ---
             let totalItemCount = 0;
