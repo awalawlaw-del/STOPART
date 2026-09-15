@@ -1475,7 +1475,6 @@
                 if (modeLaporan === 'murni') {
                     if (filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
                 } else {
-                    // Realtime: Hanya hitung transaksi yang tanggalnya >= Tanggal STO
                     if (tglTransaksi && tglTransaksi < tglStoItem) return;
                 }
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
