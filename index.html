@@ -1465,31 +1465,14 @@
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
 
             let mapMasuk = {};
-            let mapKeluar = {};
-
             inList.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
-                let tglTransaksi = parseExcelDate(m.Tanggal);
-                let tglStoItem = mapTanggalFisik[key] || filterTgl || '1970-01-01';
-
-                if (modeLaporan === 'murni') {
-                    if (filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
-                } else {
-                    if (tglTransaksi && tglTransaksi < tglStoItem) return;
-                }
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
+            let mapKeluar = {};
             outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
-                let tglTransaksi = parseExcelDate(k.Tanggal);
-                let tglStoItem = mapTanggalFisik[key] || filterTgl || '1970-01-01';
-
-                if (modeLaporan === 'murni') {
-                    if (filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
-                } else {
-                    if (tglTransaksi && tglTransaksi < tglStoItem) return;
-                }
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
 
@@ -1819,7 +1802,6 @@
             let gantungDoSet = getMapDOStatusGantung();
 
             let modeLaporan = document.getElementById('filter-mode-laporan')?.value || 'realtime';
-            let filterDashboardTgl = document.getElementById('filter-dashboard-tgl').value;
 
             allBinsForThisPart.forEach(binKeyName => {
                 let foundSysItem = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyName);
@@ -1840,14 +1822,6 @@
                 let tMasuk = 0;
                 inList.forEach(m => {
                     if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyName) {
-                        let tglTrx = parseExcelDate(m.Tanggal);
-                        let tglStoItem = tglFisik !== '-' ? tglFisik : (filterDashboardTgl || '1970-01-01');
-
-                        if (modeLaporan === 'murni') {
-                            if (filterDashboardTgl && tglTrx && tglTrx > filterDashboardTgl) return;
-                        } else {
-                            if (tglTrx && tglTrx < tglStoItem) return;
-                        }
                         tMasuk += parseInt(m['Jumlah Masuk']) || 0;
                     }
                 });
@@ -1855,14 +1829,6 @@
                 let tKeluar = 0;
                 outList.forEach(k => {
                     if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) {
-                        let tglTrx = parseExcelDate(k.Tanggal);
-                        let tglStoItem = tglFisik !== '-' ? tglFisik : (filterDashboardTgl || '1970-01-01');
-
-                        if (modeLaporan === 'murni') {
-                            if (filterDashboardTgl && tglTrx && tglTrx > filterDashboardTgl) return;
-                        } else {
-                            if (tglTrx && tglTrx < tglStoItem) return;
-                        }
                         tKeluar += parseInt(k['Jumlah Keluar']) || 0;
                     }
                 });
@@ -2099,34 +2065,17 @@
             let gantungDoSet = getMapDOStatusGantung();
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
 
-            // Peta Mutasi Masuk dan Keluar (Realtime Pasca-STO / Murni Cutoff)
+            // Peta Mutasi Masuk dan Keluar (Total akumulasi mutasi per part & bin)
             let mapMasuk = {};
             inList.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
-                let tglTransaksi = parseExcelDate(m.Tanggal);
-                let tglStoItem = mapTanggalFisik[key] || filterTgl || '1970-01-01';
-
-                if (modeLaporan === 'murni') {
-                    if (filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
-                } else {
-                    // Realtime: Hanya hitung transaksi pasca-STO (tanggal transaksi >= tanggal STO)
-                    if (tglTransaksi && tglTransaksi < tglStoItem) return;
-                }
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
             outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
-                let tglTransaksi = parseExcelDate(k.Tanggal);
-                let tglStoItem = mapTanggalFisik[key] || filterTgl || '1970-01-01';
-
-                if (modeLaporan === 'murni') {
-                    if (filterTgl && tglTransaksi && tglTransaksi > filterTgl) return;
-                } else {
-                    if (tglTransaksi && tglTransaksi < tglStoItem) return;
-                }
-                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(m = k['Jumlah Keluar']) || 0);
             });
 
             let mapSistemAwal = {};
@@ -2178,7 +2127,6 @@
                 let totalMasuk = mapMasuk[key] || 0;
                 let totalKeluar = mapKeluar[key] || 0;
                 
-                // RUMUS REAL-TIME: Stok Fisik Berjalan = Stok Fisik STO Awal + Masuk (Pasca-STO) - Keluar (Pasca-STO)
                 let fisikBerjalan = fisikAwal;
                 if (fisikAwal !== null && modeLaporan === 'realtime') {
                     fisikBerjalan = fisikAwal + totalMasuk - totalKeluar;
