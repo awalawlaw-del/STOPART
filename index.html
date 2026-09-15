@@ -1801,6 +1801,9 @@
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
             let gantungDoSet = getMapDOStatusGantung();
 
+            let modeLaporan = document.getElementById('filter-mode-laporan')?.value || 'murni';
+            let filterDashboardTgl = document.getElementById('filter-dashboard-tgl').value;
+
             allBinsForThisPart.forEach(binKeyName => {
                 let foundSysItem = sList.find(s => normPN(s['Part Number']) === normPN(cleanPn) && normBin(s['Bin']) === binKeyName);
                 let sysAwal = foundSysItem ? (parseInt(foundSysItem['Stok Sistem Awal']) || 0) : 0;
@@ -1819,12 +1822,23 @@
 
                 let tMasuk = 0;
                 inList.forEach(m => {
-                    if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyName) tMasuk += parseInt(m['Jumlah Masuk']) || 0;
+                    if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyName) {
+                        let tglTrx = parseExcelDate(m.Tanggal);
+                        // Terapkan cutoff yang sama dengan dashboard di modal detail
+                        let activeCutoffTgl = (modeLaporan === 'murni' && filterDashboardTgl) ? filterDashboardTgl : tglFisik;
+                        if (modeLaporan === 'murni' && activeCutoffTgl && activeCutoffTgl !== '-' && tglTrx && tglTrx > activeCutoffTgl) return;
+                        tMasuk += parseInt(m['Jumlah Masuk']) || 0;
+                    }
                 });
 
                 let tKeluar = 0;
                 outList.forEach(k => {
-                    if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) tKeluar += parseInt(k['Jumlah Keluar']) || 0;
+                    if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) {
+                        let tglTrx = parseExcelDate(k.Tanggal);
+                        let activeCutoffTgl = (modeLaporan === 'murni' && filterDashboardTgl) ? filterDashboardTgl : tglFisik;
+                        if (modeLaporan === 'murni' && activeCutoffTgl && activeCutoffTgl !== '-' && tglTrx && tglTrx > activeCutoffTgl) return;
+                        tKeluar += parseInt(k['Jumlah Keluar']) || 0;
+                    }
                 });
 
                 let hitung = hitungStatusStok(sysAwal, tMasuk, tKeluar, fisikVal, hasGantung, cleanPn, binKeyName);
