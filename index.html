@@ -145,6 +145,23 @@
             opacity: 0.9;
             background-color: var(--primary-color);
         }
+        /* Style Teks Berjalan Keren */
+        .marquee-container {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4f46e5 100%);
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        .marquee-text {
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -200,6 +217,15 @@
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                 
+                <!-- Teks Berjalan Keren (Permanent di Atas Dashboard) -->
+                <div class="marquee-container">
+                    <marquee behavior="scroll" direction="left" scrollamount="6">
+                        <span class="marquee-text"><i class="fa-solid fa-triangle-exclamation me-2"></i> PANTANG BELI JCO SEBELUM SELISIH 0 <i class="fa-solid fa-fire ms-2 me-4"></i></span>
+                        <span class="marquee-text"><i class="fa-solid fa-triangle-exclamation me-2"></i> PANTANG BELI JCO SEBELUM SELISIH 0 <i class="fa-solid fa-fire ms-2 me-4"></i></span>
+                        <span class="marquee-text"><i class="fa-solid fa-triangle-exclamation me-2"></i> PANTANG BELI JCO SEBELUM SELISIH 0 <i class="fa-solid fa-fire ms-2"></i></span>
+                    </marquee>
+                </div>
+
                 <!-- Header Atas -->
                 <div class="main-header d-flex justify-content-between align-items-center flex-wrap">
                     <div>
@@ -1626,36 +1652,22 @@
             let selisihStart = document.getElementById('filter-selisih-start').value;
             let selisihEnd = document.getElementById('filter-selisih-end').value;
             let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
+            let filterTgl = document.getElementById('filter-dashboard-tgl').value;
+            let currentModeLaporan = document.getElementById('filter-mode-laporan')?.value || 'murni';
 
             let inList = getWhData(masukData);
             let outList = getWhData(keluarData);
             let sList = getWhData(sistemData);
             let mList = getWhData(masterData);
 
-            let filteredMasukForSelisih = inList.filter(m => {
-                let tgl = parseExcelDate(m.Tanggal);
-                if (!tgl) return true;
-                if (selisihStart && tgl < selisihStart) return false;
-                if (selisihEnd && tgl > selisihEnd) return false;
-                return true;
-            });
-
-            let filteredKeluarForSelisih = outList.filter(k => {
-                let tgl = parseExcelDate(k.Tanggal);
-                if (!tgl) return true;
-                if (selisihStart && tgl < selisihStart) return false;
-                if (selisihEnd && tgl > selisihEnd) return false;
-                return true;
-            });
-
             let mapMasuk = {};
-            filteredMasukForSelisih.forEach(m => {
+            inList.forEach(m => {
                 let key = buildStokKey(m['Part Number'], m['Bin']);
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
-            filteredKeluarForSelisih.forEach(k => {
+            outList.forEach(k => {
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
@@ -1693,6 +1705,8 @@
                 let bin = item['Bin'] || '-';
                 let key = buildStokKey(pn, bin);
                 let tglFisik = mapTanggalFisik[key] || '-';
+
+                if (currentModeLaporan === 'murni' && filterTgl && tglFisik !== filterTgl) return;
 
                 let validTglFisik = parseExcelDate(tglFisik) || '';
                 if (selisihStart || selisihEnd) {
@@ -2390,38 +2404,11 @@
             document.getElementById('table-delivery-gantung').innerHTML = gantungHtml;
             renderPagination('gantung', filteredGantungRows.length);
 
-            // --- 7. RENDER TAB SELISIH ---
+            // --- 7. RENDER TAB SELISIH (Disesuaikan dengan Dashboard) ---
             let selisihStart = document.getElementById('filter-selisih-start')?.value || '';
             let selisihEnd = document.getElementById('filter-selisih-end')?.value || '';
             let searchSelisih = (document.getElementById('search-selisih')?.value || '').toLowerCase();
-
-            let filteredMasukForSelisih = inList.filter(m => {
-                let tgl = parseExcelDate(m.Tanggal);
-                if (!tgl) return true;
-                if (selisihStart && tgl < selisihStart) return false;
-                if (selisihEnd && tgl > selisihEnd) return false;
-                return true;
-            });
-
-            let filteredKeluarForSelisih = outList.filter(k => {
-                let tgl = parseExcelDate(k.Tanggal);
-                if (!tgl) return true;
-                if (selisihStart && tgl < selisihStart) return false;
-                if (selisihEnd && tgl > selisihEnd) return false;
-                return true;
-            });
-
-            let mapMasukSelisih = {};
-            filteredMasukForSelisih.forEach(m => {
-                let key = buildStokKey(m['Part Number'], m['Bin']);
-                mapMasukSelisih[key] = (mapMasukSelisih[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
-            });
-
-            let mapKeluarSelisih = {};
-            filteredKeluarForSelisih.forEach(k => {
-                let key = buildStokKey(k['Part Number'], k['Bin']);
-                mapKeluarSelisih[key] = (mapKeluarSelisih[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
-            });
+            let currentModeLaporan = document.getElementById('filter-mode-laporan')?.value || 'murni';
 
             let filteredSelisihRows = [];
             let masterListSelisih = [];
@@ -2448,6 +2435,8 @@
                 let key = buildStokKey(pn, bin);
                 let tglFisik = mapTanggalFisik[key] || '-';
 
+                if (currentModeLaporan === 'murni' && filterTgl && tglFisik !== filterTgl) return;
+
                 let validTglFisik = parseExcelDate(tglFisik) || '';
                 if (selisihStart || selisihEnd) {
                     if (!/^\d{4}-\d{2}-\d{2}$/.test(validTglFisik)) return;
@@ -2457,8 +2446,8 @@
 
                 let stokSistemAwal = mapSistemAwal[key] || 0;
                 let fisikAwal = mapFisikAwal[key] !== undefined ? mapFisikAwal[key] : null;
-                let totalMasuk = mapMasukSelisih[key] || 0;
-                let totalKeluar = mapKeluarSelisih[key] || 0;
+                let totalMasuk = mapMasuk[key] || 0;
+                let totalKeluar = mapKeluar[key] || 0;
                 
                 let hasGantung = false;
                 gList.forEach(g => {
