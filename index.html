@@ -1001,10 +1001,19 @@
             return { isTemuan: false, kategoriCode: '', keterangan: '' };
         }
 
-        function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn = '', bin = '') {
-            let stokSistemAkhir = stokSistemAwal + totalMasuk - totalKeluar;
+        function hitungStatusStok(stokSistemAwal, totalMasuk, totalKeluar, fisikAwal, hasGantung, pn = '', bin = '', cutoffDate = '', itemStoDate = '') {
+            // Cut-off STO: Jika transaksi terjadi setelah tanggal STO/cutoff, maka tidak dihitung
+            let effectiveMasuk = totalMasuk;
+            let effectiveKeluar = totalKeluar;
+            
+            if (cutoffDate && itemStoDate && itemStoDate <= cutoffDate) {
+                // Jika ingin membatasi transaksi setelah tanggal filter dashboard/STO
+                // Logika ini dapat disesuaikan jika mapMasuk/mapKeluar sudah difilter berdasarkan tanggal
+            }
+
+            let stokSistemAkhir = stokSistemAwal + effectiveMasuk - effectiveKeluar;
             let result = {
-                stokSistemAwal, totalMasuk, totalKeluar, effectiveKeluar: totalKeluar,
+                stokSistemAwal, totalMasuk: effectiveMasuk, totalKeluar: effectiveKeluar, effectiveKeluar,
                 hasGantung, stokSistemAkhir,
                 fisikAkhir: null,
                 selisih: null, statusKategoriCode: '', statusKeterangan: ''
@@ -1491,12 +1500,16 @@
 
             let mapMasuk = {};
             inList.forEach(m => {
+                let mDate = parseExcelDate(m.Tanggal);
+                if (filterTgl && mDate && mDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(m['Part Number'], m['Bin']);
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
             outList.forEach(k => {
+                let kDate = parseExcelDate(k.Tanggal);
+                if (filterTgl && kDate && kDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
@@ -1662,12 +1675,16 @@
 
             let mapMasuk = {};
             inList.forEach(m => {
+                let mDate = parseExcelDate(m.Tanggal);
+                if (filterTgl && mDate && mDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(m['Part Number'], m['Bin']);
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
             outList.forEach(k => {
+                let kDate = parseExcelDate(k.Tanggal);
+                if (filterTgl && kDate && kDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
@@ -1825,8 +1842,11 @@
                     }
                 });
 
+                let filterTgl = document.getElementById('filter-dashboard-tgl').value;
                 let tMasuk = 0;
                 inList.forEach(m => {
+                    let mDate = parseExcelDate(m.Tanggal);
+                    if (filterTgl && mDate && mDate > filterTgl) return; // CUT-OFF STO
                     if (normPN(m['Part Number']) === normPN(cleanPn) && normBin(m['Bin']) === binKeyName) {
                         tMasuk += parseInt(m['Jumlah Masuk']) || 0;
                     }
@@ -1834,6 +1854,8 @@
 
                 let tKeluar = 0;
                 outList.forEach(k => {
+                    let kDate = parseExcelDate(k.Tanggal);
+                    if (filterTgl && kDate && kDate > filterTgl) return; // CUT-OFF STO
                     if (normPN(k['Part Number']) === normPN(cleanPn) && normBin(k['Bin']) === binKeyName) {
                         tKeluar += parseInt(k['Jumlah Keluar']) || 0;
                     }
@@ -2067,12 +2089,16 @@
 
             let mapMasuk = {};
             inList.forEach(m => {
+                let mDate = parseExcelDate(m.Tanggal);
+                if (filterTgl && mDate && mDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(m['Part Number'], m['Bin']);
                 mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
             });
 
             let mapKeluar = {};
             outList.forEach(k => {
+                let kDate = parseExcelDate(k.Tanggal);
+                if (filterTgl && kDate && kDate > filterTgl) return; // CUT-OFF STO: Transaksi setelah tanggal STO diabaikan
                 let key = buildStokKey(k['Part Number'], k['Bin']);
                 mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
             });
