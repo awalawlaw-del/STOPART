@@ -1489,17 +1489,31 @@
             let gantungDoSet = getMapDOStatusGantung();
             let { mapFisik: mapFisikAwal, mapTanggalFisik } = getMapFisikTerbaru();
 
-            let mapMasuk = {};
-            inList.forEach(m => {
-                let key = buildStokKey(m['Part Number'], m['Bin']);
-                mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
-            });
+let mapMasuk = {};
+inList.forEach(m => {
+    // Tambahkan blok filter ini
+    if (currentModeLaporan === 'murni' && filterTgl) {
+        let tglMasuk = parseExcelDate(m.Tanggal) || '';
+        // Jika tanggal transaksi masuk LEBIH BESAR dari tanggal Cutoff STO, abaikan
+        if (tglMasuk && tglMasuk > filterTgl) return; 
+    }
+    
+    let key = buildStokKey(m['Part Number'], m['Bin']);
+    mapMasuk[key] = (mapMasuk[key] || 0) + (parseInt(m['Jumlah Masuk']) || 0);
+});
 
-            let mapKeluar = {};
-            outList.forEach(k => {
-                let key = buildStokKey(k['Part Number'], k['Bin']);
-                mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
-            });
+let mapKeluar = {};
+outList.forEach(k => {
+    // Tambahkan blok filter ini
+    if (currentModeLaporan === 'murni' && filterTgl) {
+        let tglKeluar = parseExcelDate(k.Tanggal) || '';
+        // Jika tanggal transaksi keluar LEBIH BESAR dari tanggal Cutoff STO, abaikan
+        if (tglKeluar && tglKeluar > filterTgl) return; 
+    }
+    
+    let key = buildStokKey(k['Part Number'], k['Bin']);
+    mapKeluar[key] = (mapKeluar[key] || 0) + (parseInt(k['Jumlah Keluar']) || 0);
+});
 
             let mapSistemAwal = {};
             sList.forEach(s => {
