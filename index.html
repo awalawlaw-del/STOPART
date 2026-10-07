@@ -1161,11 +1161,18 @@
         }
 
         function saveDataToStorage() {
-            localStorage.setItem('gudang_sistemData', JSON.stringify(sistemData));
-            localStorage.setItem('gudang_masterData', JSON.stringify(masterData));
-            localStorage.setItem('gudang_masukData', JSON.stringify(masukData));
-            localStorage.setItem('gudang_keluarData', JSON.stringify(keluarData));
-            localStorage.setItem('gudang_deliveryGantung', JSON.stringify(deliveryGantungData));
+            try {
+                localStorage.setItem('gudang_sistemData', JSON.stringify(sistemData));
+                localStorage.setItem('gudang_masterData', JSON.stringify(masterData));
+                localStorage.setItem('gudang_masukData', JSON.stringify(masukData));
+                localStorage.setItem('gudang_keluarData', JSON.stringify(keluarData));
+                localStorage.setItem('gudang_deliveryGantung', JSON.stringify(deliveryGantungData));
+                return true;
+            } catch (err) {
+                console.error('Gagal simpan ke localStorage:', err);
+                alert("GAGAL MENYIMPAN data ke browser (penyimpanan penuh / diblokir):\n" + err.name + " - " + err.message + "\n\nData hanya tampil sementara dan akan hilang saat halaman di-refresh.");
+                return false;
+            }
         }
 
         function parseExcelDate(val) {
@@ -1353,17 +1360,22 @@
         }
 
         function handleExcelUpload(e) {
-            let file = e.target.files[0];
+            let inputEl = e.target;
+            let file = inputEl.files[0];
             if (!file) return;
 
             let reader = new FileReader();
+            reader.onerror = function() { alert("Gagal membaca file: " + (reader.error && reader.error.message)); inputEl.value = ''; };
             reader.onload = function(e) {
+              try {
+                let summary = [];
                 let data = new Uint8Array(e.target.result);
                 let workbook = XLSX.read(data, {type: 'array'});
 
                 workbook.SheetNames.forEach(sheetName => {
                     let cleanSheetName = sheetName.toLowerCase().replace(/[^a-z0-9]/g, '');
                     let sheetRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                    summary.push(sheetName + ": " + sheetRows.length + " baris");
                     if (sheetRows.length === 0) return;
 
                     sheetRows.forEach(r => {
@@ -1499,9 +1511,15 @@
                     });
                 });
 
-                saveDataToStorage();
-                alert("File Excel berhasil di-upload dan didistribusikan ke masing-masing gudang (H50, H5A, H5B)!");
+                let saved = saveDataToStorage();
                 renderAll();
+                alert("Upload selesai" + (saved ? "" : " (TAPI TIDAK TERSIMPAN)") + ".\n\nBaris terbaca per sheet:\n" + summary.join("\n") +
+                      "\n\nStok Sistem per gudang: H50=" + getWhData(sistemData,'H50').length + ", H5A=" + getWhData(sistemData,'H5A').length + ", H5B=" + getWhData(sistemData,'H5B').length);
+              } catch (err) {
+                console.error(err);
+                alert("Upload GAGAL: " + err.name + " - " + err.message);
+              }
+              inputEl.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
